@@ -1,0 +1,109 @@
+#ifndef STACK_H
+#define STACK_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <inttypes.h>
+
+//===================================== Режимы компиляции =====================================
+#define STKDEBUG
+#define STK_CANARY
+//#define STK_HASH
+#define STK_ABORT_ON_CORRUPT
+
+#ifdef STKDEBUG
+    #define STACK_PLACE_OUT(...) , __VA_ARGS__, __func__, __FILE__, __LINE__
+    #define STACK_PLACE_IN , const char* name, const char* function, const char* file, int line
+#else 
+    #define STACK_PLACE_OUT(...)
+    #define STACK_PLACE_IN
+#endif
+//=============================================================================================
+
+// ======================================= Коды стековых ошибок ========================================
+typedef enum
+{
+    STACK_OK = 0,
+//WARNING: 1...99 - стек цел, живем дальше
+    STACK_NULL_PTR      = 1,
+    STACK_OUT_OF_MEMORY = 2, //malloc or realloc fail
+    STACK_UNDERFLOW     = 3,
+    STACK_OVERFLOW      = 4,
+    STACK_NULL_OUT_PTR  = 5,
+//ERROR: 100+ - стек испорчен и работать с ним дальше нельзя
+    STACK_ERROR_BASE             = 100,
+    STACK_CORRUPTED              = 101, //НАРУШЕН КЭШ ИЛИ КАНАРЕЙКИ или что то не так с size или capacity
+    LEFT_STACK_CANARY_STK_DEAD   = 102,  /* затёрта канарейка структуры */
+    RIGHT_STACK_CANARY_STK_DEAD  = 103,
+    LEFT_STACK_CANARY_DATA_DEAD  = 104,  /* затёрта канарейка буфера данных */
+    RIGHT_STACK_CANARY_DATA_DEAD = 105,
+    STACK_DATA_HASH_MISMATCH     = 106,  /* хеш структуры или данных не сошёлся */
+    STACK_STK_HASH_MISMATCH      = 107,
+} err_t;
+//========================================================================================================
+
+//===================== Макросы определения типа ошибки ==================
+#define STACK_IS_WARNING(_e) ((_e) != STACK_OK && (_e) < STACK_ERROR_BASE)
+#define   STACK_IS_ERROR(_e) ((_e) >= STACK_ERROR_BASE)
+//========================================================================
+
+//========= Определение типа значений в стеке =========
+typedef double Elem_t;
+#define ELEM_FMT "%lf" //format string
+#define ELEM_POISON ((Elem_t)0x8BADF00D)
+//=====================================================
+
+//================ Тип для канарейки =================
+typedef uint64_t canary_t;
+#define CANARY_VALUE ((canary_t)0xBADC0FFEE0DDF00DULL) //ULL в конце обязательно - беззнаковое целое
+//====================================================
+
+//======= Структура стека =======
+typedef struct 
+{
+#ifdef STK_CANARY
+    canary_t    left_canary;
+#endif
+#ifdef STKDEBUG
+    const char* name;
+    const char* function;
+    const char* file;
+    int line;
+#endif
+    Elem_t*     data;
+    uint64_t    capacity;
+    uint64_t    size;
+#ifdef STK_HASH
+    uint64_t    hash_data;
+    uint64_t    hash_stk;
+#endif
+#ifdef STK_CANARY
+    canary_t    right_canary;
+#endif
+} my_stack_t;
+//===============================
+
+err_t stack_ctor(my_stack_t* stk, uint64_t initial_capacity STACK_PLACE_IN);
+err_t stack_dtor(my_stack_t* stk);
+
+err_t stack_push(my_stack_t* stk,       Elem_t  value);
+err_t stack_pop( my_stack_t* stk,       Elem_t* out_value);
+err_t stack_top( const my_stack_t* stk, Elem_t* out_value);
+
+err_t stack_copy(my_stack_t* stk_dest, my_stack_t* stk_src STACK_PLACE_IN);
+
+void stack_dump(const char* out, 
+                const my_stack_t* stk, 
+                const char* name, 
+                int line, 
+                const char* functionm, 
+                const char* file_name);
+err_t stack_verify(const my_stack_t* stk);
+
+const char* my_strerror(err_t err);
+void my_perror(const char* prefix, err_t err);
+
+#endif
