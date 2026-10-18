@@ -14,12 +14,13 @@ const char* cpu_strerror(cpu_err_t err)
 {
     switch(err)
     {
-        case CPU_OK:             return "CPU OK";
-        case CPU_STACK_FAIL:     return "STACK ERROR IN CPU";
-        case CPU_DIV_BY_ZERO:    return "DIVISION BY ZERO IN CPU";
-        case CPU_UNKNOWN_OPCODE: return "UNKNOWN OPERATION CODE";
-        case CPU_MISSING_ARG:    return "MISSING ARGUMENT IN CPU";
-        default:                 return "UNKNOWN CPU ERROR";
+        case CPU_OK:              return "CPU OK";
+        case CPU_STACK_FAIL:      return "STACK ERROR IN CPU";
+        case CPU_DIV_BY_ZERO:     return "DIVISION BY ZERO IN CPU";
+        case CPU_UNKNOWN_OPCODE:  return "UNKNOWN OPERATION CODE";
+        case CPU_MISSING_ARG:     return "MISSING ARGUMENT IN CPU";
+        case CPU_PC_OUT_OF_RANGE: return "PROGRAM COUNTER CORRUPTED";
+        default:                  return "UNKNOWN CPU ERROR";
     }
 }
 //===================================================================
@@ -87,7 +88,7 @@ static cpu_err_t op_add(CPU* cpu, Elem_t arg)
 }
 //===========================================================================================================================================
 
-// ============ op_sub - из последнего элемента стека вычитает предпоследний, удаляет их из стека и кладёт результат вычитания =============
+// ============ op_sub - из предпоследнего элемента стека вычитает последний, удаляет их из стека и кладёт результат вычитания =============
 static cpu_err_t op_sub(CPU* cpu, Elem_t arg)
 {
     (void)arg;
@@ -115,7 +116,7 @@ static cpu_err_t op_mul(CPU* cpu, Elem_t arg)
 }
 //========================================================================================================================================
 
-// ============ op_div - последний элемент стека делит на предпоследний, удаляет их из стека и кладёт результат деления =============
+// ============ op_div - предпоследний элемент стека делит на последний, удаляет их из стека и кладёт результат деления =============
 static cpu_err_t op_div(CPU* cpu, Elem_t arg)
 {
     (void)arg;
@@ -124,7 +125,7 @@ static cpu_err_t op_div(CPU* cpu, Elem_t arg)
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
     if (err != CPU_OK) return err;
  
-    if (fabs(first_pop) < 1e-12) return CPU_DIV_BY_ZERO;
+    if (fabs(first_pop) < 1e-17) return CPU_DIV_BY_ZERO;
  
     cpu->stack_err = stack_push(&cpu->stack, second_pop / first_pop);
     return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
@@ -140,7 +141,7 @@ static cpu_err_t op_out(CPU* cpu, Elem_t arg)
     cpu->stack_err = stack_pop(&cpu->stack, &element);
     if (cpu->stack_err != STACK_OK) return CPU_STACK_FAIL;
  
-    printf(ELEM_FMT "\n", element);
+    printf(ELEM_PRINT "\n", element);
     return CPU_OK;
 }
 //======================================================================
@@ -172,21 +173,26 @@ static const op_func handlers[CMD_COUNT] =
 // ========================================== cpu_run - запускает процессор ==============================================
 cpu_err_t cpu_run(CPU* cpu)
 {
-    while(cpu->running && cpu->pc < (int)(cpu->code_size))
+    while(cpu->running)
     {
-        Elem_t raw = cpu->code[cpu->pc++];
-        if (raw < 0 ||
-            raw >= CMD_COUNT ||
-            raw != (Elem_t)(int)raw)
+        if (cpu->pc < 0 || cpu->pc >= (int)(cpu->code_size))
         {
-            fprintf(stderr, "cpu: %s %f (pc = %d)\n",      cpu_strerror(CPU_UNKNOWN_OPCODE), raw, cpu->pc - 1);
+            fprintf(stderr, "cpu: %s (pc = %d)\n", cpu_strerror(CPU_PC_OUT_OF_RANGE), cpu->pc);
+            return CPU_PC_OUT_OF_RANGE;
+        }
+
+        Elem_t raw = cpu->code[cpu->pc++];
+        if (!(is_valid_opcode(raw))||
+            handlers[(int)raw] == NULL)
+        {
+            fprintf(stderr, "cpu: %s " ELEM_PRINT " (pc = %d)\n", cpu_strerror(CPU_UNKNOWN_OPCODE), raw, cpu->pc - 1);
             return CPU_UNKNOWN_OPCODE;
         }
 
         int    op  = (int)raw;
         Elem_t arg = 0;
 
-        if (isa[op].has_arg)
+        if (isa[op].arg != ARG_NONE)
         {
             if (cpu->pc >= (int)cpu->code_size)
             {

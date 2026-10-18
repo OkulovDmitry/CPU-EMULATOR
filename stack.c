@@ -297,7 +297,7 @@ void dump_to(FILE* file, const my_stack_t* stk, const char* name, int line, cons
         for (uint64_t i = 0; i < (min(stk->capacity, DUMP_MAX_ELEMS)); i++)
         {
             if (stk->data[i] == ELEM_POISON) fprintf(file, "%c[%" PRIu64 "] = %s\n",           i < stk->size ? '*' : ' ', i, "ELEM_POISON");
-            else                             fprintf(file, "%c[%" PRIu64 "] = " ELEM_FMT "\n", i < stk->size ? '*' : ' ', i, stk->data[i]);
+            else                             fprintf(file, "%c[%" PRIu64 "] = " ELEM_PRINT "\n", i < stk->size ? '*' : ' ', i, stk->data[i]);
         }
 #ifdef STK_CANARY
         fprintf(file, "right_data_canary = 0x%016llX\n", (unsigned long long)(*right_canary_addr(stk)));

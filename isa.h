@@ -8,6 +8,8 @@
 #ifndef ISA_H
 #define ISA_H
 
+#include "stack.h"
+
 //====== Opcode - хранит код процессорной операции ======
 typedef enum 
 {
@@ -23,16 +25,28 @@ typedef enum
 } Opcode;
 //=======================================================
 
+typedef enum
+{
+    ARG_NONE = 0,
+    ARG_NUMB = 1,
+    ARG_ADDR = 2,
+    ARG_REG  = 3
+} ArgType;
+
 //=== ComandInfo - структура хранящая название процессорной команды и её тип ===
 typedef struct
 {
     const char* name;
-    int         has_arg;
+    ArgType     arg;
 } CommandInfo;
 //==============================================================================
 
 //==== isa - этот массив определяет какие команды может исполнять процессор на физическом уровне и определяет их тип ====//
 extern const CommandInfo isa[CMD_COUNT];
 //=======================================================================================================================//
+
+bool is_valid_opcode(Elem_t v);      // проверяет валидность команды к процессору
+int  find_command(const char* word); // функция распознания команды
+
 
 #endif //ISA_H

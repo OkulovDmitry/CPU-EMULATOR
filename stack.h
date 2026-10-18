@@ -52,7 +52,9 @@ typedef enum
 
 //========= Определение типа значений в стеке =========
 typedef double Elem_t;
-#define ELEM_FMT "%lf" //format string
+#define ELEM_FMT   "%lf"   //format string for scanf
+#define ELEM_PRINT "%.5g"  //format string for
+#define ELEM_FILE  "%.17g"
 #define ELEM_POISON ((Elem_t)0x8BADF00D)
 //=====================================================
 

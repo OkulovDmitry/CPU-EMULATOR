@@ -27,25 +27,16 @@ int main(int argc, char* argv[])
     if (err != CPU_OK)
     {
         free(bytecode);
-        cpu_strerror(err);
+        fprintf(stderr, "cpu error: %s\n", cpu_strerror(err));
         return 1;
     }
 
-    cpu_err_t run_err = cpu_run(&cpu);
+    cpu_err_t run_err  = cpu_run(&cpu);
+    cpu_err_t dtor_err = cpu_dtor(&cpu);
 
-    err = cpu_dtor(&cpu);
-    if (err != CPU_OK)
-    {
-        free(bytecode);
-        cpu_strerror(err);
-        return 1;
-    }
+    if (dtor_err != CPU_OK)
+        fprintf(stderr, "cpu error: %s\n", cpu_strerror(dtor_err));
+
     free(bytecode);
-
-    if (run_err != CPU_OK)
-    {
-        return 1;
-    }
-    
-    return 0;
+    return (run_err == CPU_OK && dtor_err == CPU_OK) ? 0 : 1;
 }

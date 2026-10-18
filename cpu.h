@@ -20,11 +20,12 @@
 //===== cpu_err_t коды процессорных ошибок =====
 typedef enum
 {
-    CPU_OK             = 0,
-    CPU_STACK_FAIL     = 1,
-    CPU_DIV_BY_ZERO    = 2,
-    CPU_UNKNOWN_OPCODE = 3,
-    CPU_MISSING_ARG    = 4
+    CPU_OK              = 0,
+    CPU_STACK_FAIL      = 1,
+    CPU_DIV_BY_ZERO     = 2,
+    CPU_UNKNOWN_OPCODE  = 3,
+    CPU_MISSING_ARG     = 4,
+    CPU_PC_OUT_OF_RANGE = 5
 } cpu_err_t;
 //==============================================
 
