@@ -18,6 +18,8 @@
 #define CELL_OP(cell)    ((cell) & (CMD_MASK))    //ячейка операции
 #define CELL_FLAGS(cell) ((cell) & (~(CMD_MASK))) //ячейка с флагами
 
+#define REG_COUNT 4
+
 //===== Одна ячейка байт-кода =====
 typedef int code_t;
 //=================================
@@ -32,6 +34,7 @@ typedef enum
     CMD_MUL  = 4,
     CMD_DIV  = 5,
     CMD_OUT  = 6,
+    CMD_POP  = 7,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;
@@ -49,10 +52,15 @@ typedef struct
 extern const CommandInfo isa[CMD_COUNT];
 //=======================================================================================================================//
 
-bool is_valid_opcode(code_t v);      // проверяет валидность команды к процессору
-bool isa_cell_ok(code_t cell);       // номер и флаги допустимы вместе
-int  operand_cells(int flags);       // сколько ячеек операндов идёт после
-int  find_command(const char* word); // функция распознания команды
+extern const char* const reg_names[REG_COUNT];
+
+bool is_valid_opcode(code_t v);       // проверяет валидность команды к процессору
+
+bool isa_cell_ok(code_t cell);        // номер и флаги допустимы вместе
+int  operand_cells(int flags);        // сколько ячеек операндов идёт после
+
+int  find_command( const char* word); // функция распознания команды
+int  find_register(const char* word); // функция распознания регистра
 
 
 #endif //ISA_H

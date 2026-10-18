@@ -20,6 +20,7 @@ const char* cpu_strerror(cpu_err_t err)
         case CPU_UNKNOWN_OPCODE:  return "UNKNOWN OPERATION CODE";
         case CPU_MISSING_ARG:     return "MISSING ARGUMENT IN CPU";
         case CPU_PC_OUT_OF_RANGE: return "PROGRAM COUNTER CORRUPTED";
+        case CPU_BAD_REGISTER:    return "BAD REGISTER NUMBER";
         default:                  return "UNKNOWN CPU ERROR";
     }
 }
@@ -31,6 +32,12 @@ cpu_err_t cpu_ctor(CPU* cpu, code_t* code, size_t code_size)
     cpu->code       = code;
     cpu->code_size  = code_size;
     cpu->pc         = 0;
+
+    for (int i = 0; i < REG_COUNT; i++)
+    {
+        cpu->regs[i] = ELEM_POISON;
+    }
+
     cpu->running    = 1;
     cpu->stack_err  = stack_ctor(&cpu->stack,
                                  16
@@ -60,24 +67,35 @@ static cpu_err_t pop_two_elements(CPU* cpu, Elem_t* first_pop, Elem_t* second_po
 }
 //====================================================================================
 
+typedef struct
+{
+    int    flags;  // какие операнды есть
+    int    reg;    // регистр (если BIT_REG)
+    code_t imm;    // число   (если BIT_IMM)
+} Operand;
+
 
 //=== Тип указателя на функцию-обработчик операции CPU ===
-typedef cpu_err_t (*op_func)(CPU* cpu, Elem_t arg);
+typedef cpu_err_t (*op_func)(CPU* cpu, const Operand* opd);
 //========================================================
 
 // ============ op_push - кладёт элемент в стек процессора =============
-static cpu_err_t op_push(CPU* cpu, Elem_t arg)
+static cpu_err_t op_push(CPU* cpu, const Operand* opd)
 {
-    cpu->stack_err = stack_push(&cpu->stack, arg);
+    Elem_t value = 0;
+    if (opd->flags & BIT_REG)  value += cpu->regs[opd->reg];
+    if (opd->flags & BIT_IMM)  value += opd->imm;
+
+    cpu->stack_err = stack_push(&cpu->stack, value);
 
     return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //======================================================================
 
 // ============ op_add - складывает два последних элемента в стеке процессора, удаляет их из стека и кладёт результат сложения =============
-static cpu_err_t op_add(CPU* cpu, Elem_t arg)
+static cpu_err_t op_add(CPU* cpu, const Operand* opd)
 {
-    (void)arg;
+    (void)opd;
     Elem_t first_pop, second_pop;
 
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
@@ -89,9 +107,9 @@ static cpu_err_t op_add(CPU* cpu, Elem_t arg)
 //===========================================================================================================================================
 
 // ============ op_sub - из предпоследнего элемента стека вычитает последний, удаляет их из стека и кладёт результат вычитания =============
-static cpu_err_t op_sub(CPU* cpu, Elem_t arg)
+static cpu_err_t op_sub(CPU* cpu, const Operand* opd)
 {
-    (void)arg;
+    (void)opd;
     Elem_t first_pop, second_pop;
 
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
@@ -103,9 +121,9 @@ static cpu_err_t op_sub(CPU* cpu, Elem_t arg)
 //==========================================================================================================================================
 
 // ============ op_mul - последний элемент стека умножает на предпоследний, удаляет их из стека и кладёт результат умножения =============
-static cpu_err_t op_mul(CPU* cpu, Elem_t arg)
+static cpu_err_t op_mul(CPU* cpu, const Operand* opd)
 {
-    (void)arg;                                                  // шлём компилятор куда подальше
+    (void)opd;                                                  // шлём компилятор куда подальше
     Elem_t first_pop, second_pop;
 
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
@@ -117,9 +135,9 @@ static cpu_err_t op_mul(CPU* cpu, Elem_t arg)
 //========================================================================================================================================
 
 // ============ op_div - предпоследний элемент стека делит на последний, удаляет их из стека и кладёт результат деления =============
-static cpu_err_t op_div(CPU* cpu, Elem_t arg)
+static cpu_err_t op_div(CPU* cpu, const Operand* opd)
 {
-    (void)arg;
+    (void)opd;
     Elem_t first_pop, second_pop;
 
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
@@ -133,9 +151,9 @@ static cpu_err_t op_div(CPU* cpu, Elem_t arg)
 //===================================================================================================================================
 
 // ============ op_out - выводит последний элемент в стеке =============
-static cpu_err_t op_out(CPU* cpu, Elem_t arg)
+static cpu_err_t op_out(CPU* cpu, const Operand* opd)
 {
-    (void)arg;
+    (void)opd;
     Elem_t element;
 
     cpu->stack_err = stack_pop(&cpu->stack, &element);
@@ -147,15 +165,26 @@ static cpu_err_t op_out(CPU* cpu, Elem_t arg)
 //======================================================================
 
 // =========== op_hlt - произодит полную остановку процессора ============
-static cpu_err_t op_hlt(CPU* cpu, Elem_t arg)
+static cpu_err_t op_hlt(CPU* cpu, const Operand* opd)
 {
-    (void)arg;
+    (void)opd;
 
     cpu->running = 0;
 
     return CPU_OK;
 }
 //========================================================================
+
+static cpu_err_t op_pop(CPU* cpu, const Operand* opd)
+{
+    Elem_t value = 0;
+
+    cpu->stack_err = stack_pop(&cpu->stack, &value);
+    if (cpu->stack_err != STACK_OK) return CPU_STACK_FAIL;
+
+    cpu->regs[opd->reg] = value;
+    return CPU_OK;
+}
 
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
@@ -167,6 +196,7 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_MUL]  = op_mul,
     [CMD_DIV]  = op_div,
     [CMD_OUT]  = op_out,
+    [CMD_POP]  = op_pop,
 };
 //============================================================================
 
@@ -191,19 +221,30 @@ cpu_err_t cpu_run(CPU* cpu)
 
         int    op    = CELL_OP(cell);
         int    flags = CELL_FLAGS(cell);
-        Elem_t arg   = 0;
+        Operand opd  = {.flags = flags, .imm = 0, .reg = 0};
+
+        if (cpu->pc + operand_cells(opd.flags) > (int)cpu->code_size)
+        {
+            fprintf(stderr, "cpu: %s for %s (pc = %d)\n", cpu_strerror(CPU_MISSING_ARG), isa[op].name, cpu->pc);
+            return CPU_MISSING_ARG;
+        }
+
+        if (flags & BIT_REG)
+        {
+            opd.reg = cpu->code[cpu->pc++];
+            if (opd.reg < 0 || opd.reg >= REG_COUNT)
+            {
+                fprintf(stderr, "cpu: %s %d in %s\n", cpu_strerror(CPU_BAD_REGISTER), opd.reg, isa[op].name);
+                return CPU_BAD_REGISTER;
+            }
+        }
 
         if (flags & BIT_IMM)
         {
-            if (cpu->pc >= (int)cpu->code_size)
-            {
-                fprintf(stderr, "cpu: %s for %s (pc = %d)\n", cpu_strerror(CPU_MISSING_ARG), isa[op].name, cpu->pc);
-                return CPU_MISSING_ARG;
-            }
-            arg = cpu->code[cpu->pc++];
+            opd.imm = cpu->code[cpu->pc++];
         }
 
-        cpu_err_t err = handlers[op](cpu, arg);
+        cpu_err_t err = handlers[op](cpu, &opd);
         if (err == CPU_STACK_FAIL)
         {
             my_perror(isa[op].name, cpu->stack_err);

@@ -12,14 +12,23 @@
 const CommandInfo isa[CMD_COUNT] =
 {
     [CMD_HLT]   = {"HLT",  0},
-    [CMD_PUSH]  = {"PUSH", BIT_IMM},
+    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG},
     [CMD_ADD]   = {"ADD",  0},
     [CMD_SUB]   = {"SUB",  0},
     [CMD_MUL]   = {"MUL",  0},
     [CMD_DIV]   = {"DIV",  0},
-    [CMD_OUT]   = {"OUT",  0}
+    [CMD_OUT]   = {"OUT",  0},
+    [CMD_POP]   = {"POP",  BIT_REG}
 };
 //=======================================================================================================================//
+
+const char* const reg_names[REG_COUNT] = 
+{
+    "AX",
+    "BX",
+    "CX",
+    "DX"
+};
 
 //============ is_valid_opcode - проверяет валидность команды к процессору ============
 bool is_valid_opcode(code_t v)
@@ -61,3 +70,13 @@ int find_command(const char* word)
     return -1;
 }
 //========================================================
+
+int find_register(const char* word)
+{
+    for (int i = 0; i < REG_COUNT; i++)
+    {
+        if (strcmp(word, reg_names[i]) == 0)
+            return i;
+    }
+    return -1;
+}

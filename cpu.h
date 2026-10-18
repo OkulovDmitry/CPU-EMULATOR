@@ -26,7 +26,8 @@ typedef enum
     CPU_DIV_BY_ZERO     = 2,
     CPU_UNKNOWN_OPCODE  = 3,
     CPU_MISSING_ARG     = 4,
-    CPU_PC_OUT_OF_RANGE = 5
+    CPU_PC_OUT_OF_RANGE = 5,
+    CPU_BAD_REGISTER    = 6
 } cpu_err_t;
 //==============================================
 
@@ -34,11 +35,12 @@ typedef enum
 typedef struct
 {
     my_stack_t  stack;
-    code_t*     code;          // наш байт-код
-    size_t      code_size;     // количество чисел в массиве
-    int         pc;            // для будущих JMP
-    int         running;       // запущена ли прога
-    err_t       stack_err;     // последняя ошибка стека 
+    code_t*     code;              // наш байт-код
+    size_t      code_size;         // количество чисел в массиве
+    Elem_t      regs[REG_COUNT];   // массив регистров процессора
+    int         pc;                // для будущих JMP
+    int         running;           // запущена ли прога
+    err_t       stack_err;         // последняя ошибка стека 
 } CPU;
 //=============================================================
 

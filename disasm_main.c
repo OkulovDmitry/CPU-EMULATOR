@@ -64,16 +64,32 @@ int disassembler(const char* path, const code_t* code, const int size)
         ind++;
 
         fprintf(out, "%s", isa[op].name);
-        if (flags & BIT_IMM)
+
+        int n = operand_cells(flags);
+        if (ind + n > size)
         {
-            if (ind >= size)
+            fprintf(stderr, "disasm: missing argument for %s\n", isa[op].name);
+            fclose(out);
+            return -1;
+        }
+
+        if (flags & BIT_REG)
+        {
+            int reg = code[ind++];
+
+            if (reg < 0 || reg > REG_COUNT)
             {
-                fprintf(stderr, "disasm: missing argument for %s\n", isa[op].name);
+                fprintf(stderr, "disasm: bad register %d\n", reg);
                 fclose(out);
                 return -1;
             }
-            fprintf(out, " %d", code[ind++]);
+
+            fprintf(out, " %s", reg_names[reg]);
         }
+
+        if (flags & BIT_IMM) 
+            fprintf(out, " %d", code[ind++]);
+
         fprintf(out, "\n");
     }
 

@@ -94,13 +94,15 @@ code_t* assembler(const char* path, int* size)
             bytecode = bytecode_tmp;
         }
 
-        int flags = 0;
-        int first_arg = 0;
-        //int second_arg = 0;
+        int flags   = 0;
+        int operand = 0;
 
         if (isa[op].allowed != 0)
         {
-            if (sscanf(line, "%63s %d%n", word, &first_arg, &used) != 2)
+            char arg_text[64];
+            int   arg_used     = 0;
+            
+            if (sscanf(line + used, "%63s %n", arg_text, &arg_used) != 1)
             {
                 fprintf(stderr, "%s:%d: missing argument for %s\n", path, lineno, word);
                 free(bytecode);
@@ -108,11 +110,41 @@ code_t* assembler(const char* path, int* size)
                 return NULL;
             }
 
-            flags = BIT_IMM;
+            used += arg_used;
+
+            int reg = find_register(arg_text);
+            if (reg != -1 && (isa[op].allowed & BIT_REG))
+            {
+                flags = BIT_REG;
+                operand = reg;
+            }
+            else
+            {
+                char* endp = NULL;
+                operand = strtol(arg_text, &endp, 10);
+
+                if (endp == arg_text || *endp != '\0')
+                {
+                    fprintf(stderr, "%s:%d: bad argument '%s' for %s\n", path, lineno, arg_text, word);
+                    free(bytecode);
+                    fclose(in);
+                    return NULL;
+
+                }
+                if (!(isa[op].allowed & BIT_IMM))
+                {
+                    fprintf(stderr, "%s:%d: %s does not accept a number\n", path, lineno, word);
+                    free(bytecode);
+                    fclose(in);
+                    return NULL;
+                }
+
+                flags = BIT_IMM;
+            }
         }
 
         bytecode[count++] = (code_t)(op | flags);
-        if (flags & BIT_IMM) bytecode[count++] = (code_t)first_arg;
+        if (flags != 0) bytecode[count++] = (code_t)operand;
 
 
         char* end = line + used;                                            // здесь проверка что нет мусора после основной части строки
