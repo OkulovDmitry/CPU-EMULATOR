@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include "stack.h"
+#include "isa.h"
 
 //===== cpu_err_t коды процессорных ошибок =====
 typedef enum
@@ -33,7 +34,7 @@ typedef enum
 typedef struct
 {
     my_stack_t  stack;
-    Elem_t*     code;          // наш байт-код
+    code_t*     code;          // наш байт-код
     size_t      code_size;     // количество чисел в массиве
     int         pc;            // для будущих JMP
     int         running;       // запущена ли прога
@@ -41,7 +42,7 @@ typedef struct
 } CPU;
 //=============================================================
 
-cpu_err_t   cpu_ctor(CPU* cpu, Elem_t* code, size_t code_size);  // функция создающая        cpu
+cpu_err_t   cpu_ctor(CPU* cpu, code_t* code, size_t code_size);  // функция создающая        cpu
 cpu_err_t   cpu_dtor(CPU* cpu);                                  // функция разрушающая      cpu
 cpu_err_t   cpu_run( CPU* cpu);                                  // функция запускающая      cpu
 const char* cpu_strerror(cpu_err_t err);                         // функция обработки ошибок cpu

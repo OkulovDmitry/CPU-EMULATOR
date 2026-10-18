@@ -26,7 +26,7 @@ const char* cpu_strerror(cpu_err_t err)
 //===================================================================
 
 //========================= cpu_ctor - создаёт cpu =============================
-cpu_err_t cpu_ctor(CPU* cpu, Elem_t* code, size_t code_size)
+cpu_err_t cpu_ctor(CPU* cpu, code_t* code, size_t code_size)
 {
     cpu->code       = code;
     cpu->code_size  = code_size;
@@ -181,18 +181,19 @@ cpu_err_t cpu_run(CPU* cpu)
             return CPU_PC_OUT_OF_RANGE;
         }
 
-        Elem_t raw = cpu->code[cpu->pc++];
-        if (!(is_valid_opcode(raw))||
-            handlers[(int)raw] == NULL)
+        code_t cell = cpu->code[cpu->pc++];
+        if (!(isa_cell_ok(cell)) ||
+            handlers[CELL_OP(cell)] == NULL)
         {
-            fprintf(stderr, "cpu: %s " ELEM_PRINT " (pc = %d)\n", cpu_strerror(CPU_UNKNOWN_OPCODE), raw, cpu->pc - 1);
+            fprintf(stderr, "cpu: %s %d (pc = %d)\n", cpu_strerror(CPU_UNKNOWN_OPCODE), cell, cpu->pc - 1);
             return CPU_UNKNOWN_OPCODE;
         }
 
-        int    op  = (int)raw;
-        Elem_t arg = 0;
+        int    op    = CELL_OP(cell);
+        int    flags = CELL_FLAGS(cell);
+        Elem_t arg   = 0;
 
-        if (isa[op].arg != ARG_NONE)
+        if (flags & BIT_IMM)
         {
             if (cpu->pc >= (int)cpu->code_size)
             {

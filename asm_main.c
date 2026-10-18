@@ -14,7 +14,7 @@
 #include "isa.h"
 #include "bytecode.h"
 
-Elem_t* assembler(const char* path, int* size); // функция ассемблер
+code_t* assembler(const char* path, int* size); // функция ассемблер
 
 int main(int argc, char* argv[])
 {
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     }
 
     int size = 0;
-    Elem_t* bytecode = assembler(argv[1], &size);
+    code_t* bytecode = assembler(argv[1], &size);
     if (bytecode == NULL)
     {
         return 1;
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 }
 
 //=============================== Функция ассемблер ====================================
-Elem_t* assembler(const char* path, int* size)
+code_t* assembler(const char* path, int* size)
 {
     FILE* in = fopen(path, "r");
     if (in == NULL)
@@ -48,7 +48,7 @@ Elem_t* assembler(const char* path, int* size)
     }
 
     int capacity = 64;
-    Elem_t* bytecode = malloc(capacity * sizeof(Elem_t));
+    code_t* bytecode = malloc(capacity * sizeof(code_t));
     if (bytecode == NULL)
     {
         fclose(in);
@@ -80,9 +80,9 @@ Elem_t* assembler(const char* path, int* size)
             return NULL;
         }
 
-        if (count + 2 > capacity)
+        if (count + 3 > capacity)
         {
-            Elem_t* bytecode_tmp = realloc(bytecode, 2 * capacity * sizeof(Elem_t));
+            code_t* bytecode_tmp = realloc(bytecode, 2 * capacity * sizeof(code_t));
             if (bytecode_tmp == NULL)
             {
                 free(bytecode);
@@ -94,13 +94,13 @@ Elem_t* assembler(const char* path, int* size)
             bytecode = bytecode_tmp;
         }
 
-        bytecode[count++] = (Elem_t)op;
+        int flags = 0;
+        int first_arg = 0;
+        //int second_arg = 0;
 
-        if (isa[op].arg != ARG_NONE)
+        if (isa[op].allowed != 0)
         {
-            Elem_t arg = 0;
-
-            if (sscanf(line, "%63s " ELEM_FMT "%n", word, &arg, &used) != 2)
+            if (sscanf(line, "%63s %d%n", word, &first_arg, &used) != 2)
             {
                 fprintf(stderr, "%s:%d: missing argument for %s\n", path, lineno, word);
                 free(bytecode);
@@ -108,8 +108,12 @@ Elem_t* assembler(const char* path, int* size)
                 return NULL;
             }
 
-            bytecode[count++] = arg;
+            flags = BIT_IMM;
         }
+
+        bytecode[count++] = (code_t)(op | flags);
+        if (flags & BIT_IMM) bytecode[count++] = (code_t)first_arg;
+
 
         char* end = line + used;                                            // здесь проверка что нет мусора после основной части строки
         while(isspace((unsigned char)(*end))) end++;

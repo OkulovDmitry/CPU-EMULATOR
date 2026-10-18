@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     }
 
     int size = 0;
-    Elem_t* bytecode = bytecode_read(argv[1], &size);
+    code_t* bytecode = bytecode_read(argv[1], &size);
     if(bytecode == NULL)
     {
         return 1;

@@ -10,6 +10,18 @@
 
 #include "stack.h"
 
+#define CMD_MASK 0x1F      // младшие 5 бит - номер команды
+#define BIT_IMM  (1 << 5)  // дальше идёт число
+#define BIT_REG  (1 << 6)  // дальше идёт регистр
+#define BIT_MEM  (1 << 7)  // операнд в оперативке
+
+#define CELL_OP(cell)    ((cell) & (CMD_MASK))    //ячейка операции
+#define CELL_FLAGS(cell) ((cell) & (~(CMD_MASK))) //ячейка с флагами
+
+//===== Одна ячейка байт-кода =====
+typedef int code_t;
+//=================================
+
 //====== Opcode - хранит код процессорной операции ======
 typedef enum 
 {
@@ -25,19 +37,11 @@ typedef enum
 } Opcode;
 //=======================================================
 
-typedef enum
-{
-    ARG_NONE = 0,
-    ARG_NUMB = 1,
-    ARG_ADDR = 2,
-    ARG_REG  = 3
-} ArgType;
-
 //=== ComandInfo - структура хранящая название процессорной команды и её тип ===
 typedef struct
 {
     const char* name;
-    ArgType     arg;
+    int         allowed;   // разврешённые флаги
 } CommandInfo;
 //==============================================================================
 
@@ -45,7 +49,9 @@ typedef struct
 extern const CommandInfo isa[CMD_COUNT];
 //=======================================================================================================================//
 
-bool is_valid_opcode(Elem_t v);      // проверяет валидность команды к процессору
+bool is_valid_opcode(code_t v);      // проверяет валидность команды к процессору
+bool isa_cell_ok(code_t cell);       // номер и флаги допустимы вместе
+int  operand_cells(int flags);       // сколько ячеек операндов идёт после
 int  find_command(const char* word); // функция распознания команды
 
 

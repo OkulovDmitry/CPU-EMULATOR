@@ -12,7 +12,7 @@
 const CommandInfo isa[CMD_COUNT] =
 {
     [CMD_HLT]   = {"HLT",  0},
-    [CMD_PUSH]  = {"PUSH", 1},
+    [CMD_PUSH]  = {"PUSH", BIT_IMM},
     [CMD_ADD]   = {"ADD",  0},
     [CMD_SUB]   = {"SUB",  0},
     [CMD_MUL]   = {"MUL",  0},
@@ -22,13 +22,33 @@ const CommandInfo isa[CMD_COUNT] =
 //=======================================================================================================================//
 
 //============ is_valid_opcode - проверяет валидность команды к процессору ============
-bool is_valid_opcode(Elem_t v)
+bool is_valid_opcode(code_t v)
 {
-    return v >= 0 &&
-           v < CMD_COUNT &&
-           v == (Elem_t)(int)v;
+    return 0 <= v && v < CMD_COUNT;
 }
 //=====================================================================================
+
+//============ isa_cell_ok - проверяет совместимость флагов и команды ============
+bool isa_cell_ok(code_t cell)
+{
+    int op    = CELL_OP(cell);
+    int flags = CELL_FLAGS(cell);
+
+    if (!(is_valid_opcode(op)))               return false;  // является ли команда валидной
+    if ((flags & ~isa[op].allowed)     != 0)  return false;  // проверка на лишний флаг
+    if (isa[op].allowed != 0 && flags == 0)   return false;  // проверка на наличие флага у команды с обязательным наличием флага
+
+    return true;
+}
+//================================================================================
+
+//============ operand_cells - подсчёт количества операндов после команды ============
+int  operand_cells(int flags)
+{
+    return ((flags & BIT_IMM) ? 1 : 0) + ((flags & BIT_REG) ? 1 : 0);
+}
+//================================================================================
+
 
 //============= Функция распознания команды ==============
 int find_command(const char* word)

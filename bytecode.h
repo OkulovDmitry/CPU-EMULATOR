@@ -16,7 +16,7 @@
 #include "stack.h"
 #include "isa.h"
 
-Elem_t* bytecode_read( const char* path, int* size);                           // производит полное чтение файла с байт кодом и производит его запись в Elem_t*
-int     bytecode_write(const char* path, const Elem_t* code, const int size);  // производит запись байт кода в файл
+code_t* bytecode_read( const char* path, int* size);                           // производит полное чтение файла с байт кодом и производит его запись в Elem_t*
+int     bytecode_write(const char* path, const code_t* code, const int size);  // производит запись байт кода в файл
 
 #endif //BYTECODE_H
