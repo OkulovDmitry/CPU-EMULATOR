@@ -107,7 +107,7 @@ code_t* assembler(const char* path, int* size)
         return NULL;
     }
 
-    int capacity = 64;
+    int capacity = 64;                                                    // первоначальный размер байт-кода
     code_t* bytecode = malloc(capacity * sizeof(code_t));
     if (bytecode == NULL)
     {
@@ -117,9 +117,9 @@ code_t* assembler(const char* path, int* size)
     }
 
     LabelTable labels = { .labels_count = 0 };
-    int count         = 0; //количество команд и аргументов в bytecode
+    int count         = 0;                      // количество команд и аргументов в bytecode
 
-    for (int pass = 1; pass <= 2; pass++)
+    for (int pass = 1; pass <= 2; pass++)       // pass - номер прохода ассемблера
     {
         rewind(in);
 
@@ -160,6 +160,7 @@ code_t* assembler(const char* path, int* size)
                 }
 
                 char* end_of_label = line + used;
+                while (isspace((unsigned char)*end_of_label)) end_of_label++;
                 if (*end_of_label  != '\0' && *end_of_label != '\n')
                 {
                     fprintf(stderr, "%s:%d: unexpected '%s' after label\n", path, lineno, end_of_label);
