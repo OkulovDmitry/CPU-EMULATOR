@@ -14,21 +14,26 @@
 #include "isa.h"
 #include "bytecode.h"
 
-#define MAX_LABELS 128
-#define LABEL_LEN  32
+#define MAX_LABELS 128   // максимальное число меток в массиве меток
+#define LABEL_LEN  32    // максимальная длина имени метки
 
+//========= Label - структура одной метки ==========
 typedef struct
 {
-    char   name[LABEL_LEN];
-    int    addr;
+    char   name[LABEL_LEN];   // имя   метки
+    int    addr;              // адрес метки
 } Label;
+//==================================================
 
+//=== LabelTable - структура с таблицей меток ===
 typedef struct
 {
-    Label  items[MAX_LABELS];
-    int    labels_count;
+    Label  items[MAX_LABELS]; // массив     меток
+    int    labels_count;      // количество меток
 } LabelTable;
+//===============================================
 
+//=========== label_find - функция поиска метки =============
 static int label_find(const LabelTable* t, const char* name)
 {
     for (int i = 0; i < t->labels_count; i++)
@@ -39,7 +44,9 @@ static int label_find(const LabelTable* t, const char* name)
 
     return -1;
 }
+//============================================================
 
+//============= lable_add - добавляет метку в массив меток ================
 static bool label_add(LabelTable* t, const char* name, int addr)
 {
     if (t->labels_count >= MAX_LABELS) return false;
@@ -52,7 +59,9 @@ static bool label_add(LabelTable* t, const char* name, int addr)
 
     return true;
 }
+//==========================================================================
 
+//============================= label_name_ok - проверяет валидность имени метки =================================
 // имя начинается на _ или букву, далее буквы и цифры и _, имя метки не совпадает с именами функций, регистров
 static bool label_name_ok(const char* name)
 {
@@ -63,6 +72,7 @@ static bool label_name_ok(const char* name)
     return find_command(name)  == -1 &&
            find_register(name) == -1;
 }
+//=================================================================================================================
 
 code_t* assembler(const char* path, int* size); // функция ассемблер
 
