@@ -47,7 +47,7 @@ typedef struct
     int         running;                      // флаг на запуск программы
     int         call_stack[CALL_STACK_SIZE];  // адреса возврата
     int         call_sp;                      // количество адресов в call стеке
-    err_t       stack_err;                    // последняя ошибка стека 
+    err_t       stack_err;                    // последняя ошибка стека
 } CPU;
 //=============================================================
 

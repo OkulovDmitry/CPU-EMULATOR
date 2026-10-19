@@ -16,8 +16,8 @@ code_t* bytecode_read(const char* path, int* size)
     }
 
     int count = 0;                                                      // количество считанных команд и их аргументов - размер bytecode
-    long long raw = 0;                                                  // принимаемый код операции
-    while (fscanf(in, "%lld", &raw) == 1)
+    uint64_t raw = 0;                                                  // принимаемый код операции
+    while (fscanf(in, "%" SCNu64, &raw) == 1)
     {
         code_t value = (code_t)raw;
         if (!(isa_cell_ok(value)))                                      // проверка совместимости флагов и команды
@@ -47,9 +47,9 @@ code_t* bytecode_read(const char* path, int* size)
 
         for (int i = 0; i < number_of_flags; i++)
         {
-            long long arg = 0;
+            uint64_t arg = 0;
 
-            if (fscanf(in, "%lld", &arg) != 1)                            // если вошли в цикл - аргумент должен быть
+            if (fscanf(in, "%" SCNu64, &arg) != 1)                            // если вошли в цикл - аргумент должен быть
             {
                 free(bytecode);
                 fclose(in);
@@ -81,7 +81,7 @@ int bytecode_write(const char* path, const code_t* code, const int size)
     if (out == NULL) { perror(path); return -1; }
 
     for (int i = 0; i < size; i++)
-        fprintf(out, "%lld%c", (long long)code[i], i + 1 < size ? ' ' : '\n');
+        fprintf(out, "%" PRIu64 "%c", code[i], i + 1 < size ? ' ' : '\n');
 
     fclose(out);
     return 0;

@@ -219,7 +219,7 @@ code_t* assembler(const char* path, int* size)
                     flags = BIT_REG;
                     operand = reg;
                 }
-                else
+                else if (isa[op].is_jump)
                 {
                     char* endp = NULL;
                     operand    = strtoll(arg_text, &endp, 10);
@@ -264,6 +264,26 @@ code_t* assembler(const char* path, int* size)
                         fclose(in);
                         return NULL;
                     }
+                }
+                else
+                {
+                    char* endp = NULL;
+                    double d   = strtod(arg_text, &endp);
+
+                    if (endp == arg_text || *endp != '\0' || !(isa[op].allowed & BIT_IMM))
+                    {
+                        if (!(isa[op].allowed & BIT_IMM))
+                        {
+                            fprintf(stderr, "%s:%d: bad argument '%s' for %s\n", path, lineno, arg_text, word);
+                            free(bytecode);
+                            fclose(in);
+                            return NULL;
+                        }
+                        flags = BIT_IMM;
+                    }
+
+                    operand = double_to_cell(d);
+                    flags = BIT_IMM | (isa[op].allowed & BIT_FLT);
                 }
             }
 

@@ -88,7 +88,12 @@ int disassembler(const char* path, const code_t* code, const int size)
         }
 
         if (flags & BIT_IMM) 
-            fprintf(out, " %" PRIu64, code[ind++]);
+        {
+            code_t imm = code[ind++];
+
+            if (flags & BIT_FLT) fprintf(out, " " ELEM_FILE, cell_to_double(imm));  // double
+            else                 fprintf(out, " %" PRIu64, imm);
+        }
 
         fprintf(out, "\n");
     }
