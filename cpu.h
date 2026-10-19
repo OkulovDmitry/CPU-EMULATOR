@@ -41,12 +41,12 @@ typedef struct
 {
     my_stack_t  stack;
     code_t*     code;                         // наш байт-код
-    size_t      code_size;                    // количество чисел в массиве
+    size_t      code_size;                    // количество команд и аргументов в байт-коде
     Elem_t      regs[REG_COUNT];              // массив регистров процессора
-    int         pc;                           // для JMP
-    int         running;                      // запущена ли прога
+    int         pc;                           // текущая исполняемая байт-кодом команда
+    int         running;                      // флаг на запуск программы
     int         call_stack[CALL_STACK_SIZE];  // адреса возврата
-    int         call_sp;                      //количество адресов в call стеке
+    int         call_sp;                      // количество адресов в call стеке
     err_t       stack_err;                    // последняя ошибка стека 
 } CPU;
 //=============================================================

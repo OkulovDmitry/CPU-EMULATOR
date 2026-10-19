@@ -6,7 +6,7 @@ code_t* bytecode_read(const char* path, int* size)
     FILE* in = fopen(path, "r");
     if (in == NULL) { perror(path); return NULL; }
 
-    int capacity = 64;
+    int capacity = 64;                                                  // первоначальный максимальный размер bytecode
     code_t* bytecode = malloc(capacity * sizeof(code_t));
     if (bytecode == NULL)
     {
@@ -15,18 +15,18 @@ code_t* bytecode_read(const char* path, int* size)
         return NULL;
     }
 
-    int count = 0;
-    int value = 0;
+    int count = 0;                                                      // количество считанных команд и их аргументов - размер bytecode
+    int value = 0;                                                      // принимаемый код операции
     while (fscanf(in, "%d", &value) == 1)
     {
-        if (!(isa_cell_ok(value)))
+        if (!(isa_cell_ok(value)))                                      // проверка совместимости флагов и команды
         {
             fprintf(stderr, "%s: bad opcode %d\n", path, value);
             free(bytecode);
             fclose(in);
             return NULL;
         }
-        if (count + 3 > capacity)
+        if (count + 3 > capacity)                                       // увеличение размеров bytecode при необходимости
         {
             code_t* bytecode_tmp = realloc(bytecode, 2 * capacity * sizeof(code_t));
             if (bytecode_tmp == NULL)
@@ -40,15 +40,15 @@ code_t* bytecode_read(const char* path, int* size)
             bytecode = bytecode_tmp;
         }
 
-        int op              = value;
+        int op              = value;                                    // код операции
         bytecode[count++]   = op;
-        int number_of_flags = operand_cells(CELL_FLAGS(value));
+        int number_of_flags = operand_cells(CELL_FLAGS(value));         // подсчет количества операндов после команды
 
         for (int i = 0; i < number_of_flags; i++)
         {
             int arg = 0;
 
-            if (fscanf(in, "%d", &arg) != 1)
+            if (fscanf(in, "%d", &arg) != 1)                            // если вошли в цикл - аргумент должен быть
             {
                 free(bytecode);
                 fclose(in);
@@ -57,9 +57,9 @@ code_t* bytecode_read(const char* path, int* size)
             }
             bytecode[count++] = arg;
         }
-    }
+    }         
 
-    if(!(feof(in)))
+    if(!(feof(in)))                                                      // проверка достижения конца файла  
     {
         free(bytecode);
         fprintf(stderr, "error in read of %s, bytecode_read() cant read end of file\n", path);
