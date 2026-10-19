@@ -55,6 +55,7 @@ cpu_err_t cpu_dtor(CPU* cpu)
 
     return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
+//====================================================================================
 
 static cpu_err_t pop_two_elements(CPU* cpu, Elem_t* first_pop, Elem_t* second_pop)
 {
@@ -66,7 +67,6 @@ static cpu_err_t pop_two_elements(CPU* cpu, Elem_t* first_pop, Elem_t* second_po
 
     return CPU_OK;
 }
-//====================================================================================
 
 typedef struct
 {
@@ -74,6 +74,33 @@ typedef struct
     int    reg;    // регистр (если BIT_REG)
     code_t imm;    // число   (если BIT_IMM)
 } Operand;
+
+static cpu_err_t do_jump(CPU* cpu, const Operand* opd)
+{
+    if (opd->imm < 0 ||
+        opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
+
+    cpu->pc = opd->imm;
+    return CPU_OK;
+}
+
+static cpu_err_t cond_jump(CPU* cpu, const Operand* opd, bool (*cmp)(Elem_t, Elem_t))
+{
+    Elem_t top, below;
+
+    cpu_err_t err = pop_two_elements(cpu, &top, &below);
+    if (err != CPU_OK) return err;
+
+    if (cmp(below, top)) return do_jump(cpu, opd);
+    return CPU_OK;
+}
+
+static bool cmp_a  (Elem_t a, Elem_t b) { return a >  b; }
+static bool cmp_ae (Elem_t a, Elem_t b) { return a >= b; }
+static bool cmp_b  (Elem_t a, Elem_t b) { return a <  b; }
+static bool cmp_be (Elem_t a, Elem_t b) { return a <= b; }
+static bool cmp_e  (Elem_t a, Elem_t b) { return a == b; }
+static bool cmp_ne (Elem_t a, Elem_t b) { return a != b; }
 
 
 //=== Тип указателя на функцию-обработчик операции CPU ===
@@ -187,14 +214,13 @@ static cpu_err_t op_pop(CPU* cpu, const Operand* opd)
     return CPU_OK;
 }
 
-static cpu_err_t op_jmp(CPU* cpu, const Operand* opd)
-{
-    if (opd->imm < 0 ||
-        opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
-
-    cpu->pc = opd->imm;
-    return CPU_OK;
-}
+static cpu_err_t op_jmp (CPU* cpu, const Operand* opd){ return do_jump   (cpu, opd); }
+static cpu_err_t op_ja  (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_a); }
+static cpu_err_t op_jae (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_ae); }
+static cpu_err_t op_jb  (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_b); }
+static cpu_err_t op_jbe (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_be); }
+static cpu_err_t op_je  (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_e); }
+static cpu_err_t op_jne (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_ne); }
 
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
@@ -208,6 +234,12 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_OUT]  = op_out,
     [CMD_POP]  = op_pop,
     [CMD_JMP]  = op_jmp,
+    [CMD_JA]   = op_ja,
+    [CMD_JAE]  = op_jae,
+    [CMD_JB]   = op_jb,
+    [CMD_JBE]  = op_jbe,
+    [CMD_JE]   = op_je,
+    [CMD_JNE]  = op_jne,
 };
 //============================================================================
 

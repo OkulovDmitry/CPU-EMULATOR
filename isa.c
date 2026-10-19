@@ -19,7 +19,13 @@ const CommandInfo isa[CMD_COUNT] =
     [CMD_DIV]   = {"DIV",  0,                 0},
     [CMD_OUT]   = {"OUT",  0,                 0},
     [CMD_POP]   = {"POP",  BIT_REG,           0},
-    [CMD_JMP]   = {"JMP",  BIT_IMM,           1}
+    [CMD_JMP]   = {"JMP",  BIT_IMM,           1},
+    [CMD_JA]    = {"JA",   BIT_IMM,           1},
+    [CMD_JAE]   = {"JAE",  BIT_IMM,           1},
+    [CMD_JB]    = {"JB",   BIT_IMM,           1},
+    [CMD_JBE]   = {"JBE",  BIT_IMM,           1},
+    [CMD_JE]    = {"JE",   BIT_IMM,           1},
+    [CMD_JNE]   = {"JNE",  BIT_IMM,           1},
 };
 //=======================================================================================================================//
 

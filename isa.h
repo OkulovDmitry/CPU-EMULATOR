@@ -36,6 +36,12 @@ typedef enum
     CMD_OUT  = 6,
     CMD_POP  = 7,
     CMD_JMP  = 8,
+    CMD_JA   = 9,
+    CMD_JAE  = 10,
+    CMD_JB   = 11,
+    CMD_JBE  = 12,
+    CMD_JE   = 13,
+    CMD_JNE  = 14,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;

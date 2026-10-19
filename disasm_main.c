@@ -77,7 +77,7 @@ int disassembler(const char* path, const code_t* code, const int size)
         {
             int reg = code[ind++];
 
-            if (reg < 0 || reg > REG_COUNT)
+            if (reg < 0 || reg >= REG_COUNT)
             {
                 fprintf(stderr, "disasm: bad register %d\n", reg);
                 fclose(out);

@@ -43,7 +43,7 @@ static int label_find(const LabelTable* t, const char* name)
 static bool label_add(LabelTable* t, const char* name, int addr)
 {
     if (t->labels_count >= MAX_LABELS) return false;
-    if (strlen(name) > LABEL_LEN)      return false;
+    if (strlen(name)    >= LABEL_LEN)  return false;
     if (label_find(t, name) != -1)     return false;
 
     strcpy(t->items[t->labels_count].name, name);
@@ -58,7 +58,7 @@ static bool label_name_ok(const char* name)
 {
     if (!(isalpha((unsigned char)name[0])) && name[0] != '_') return false;
     for (const char *p = name; *p; p++)
-        if (!(isalnum((unsigned char)name[0])) && name[0] != '_') return false;
+        if (!(isalnum((unsigned char)*p)) && *p != '_') return false;
     
     return find_command(name)  == -1 &&
            find_register(name) == -1;
