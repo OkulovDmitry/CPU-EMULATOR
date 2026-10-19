@@ -11,14 +11,15 @@
 //==== isa - этот массив определяет какие команды может исполнять процессор на физическом уровне и определяет их тип ====//
 const CommandInfo isa[CMD_COUNT] =
 {
-    [CMD_HLT]   = {"HLT",  0},
-    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG},
-    [CMD_ADD]   = {"ADD",  0},
-    [CMD_SUB]   = {"SUB",  0},
-    [CMD_MUL]   = {"MUL",  0},
-    [CMD_DIV]   = {"DIV",  0},
-    [CMD_OUT]   = {"OUT",  0},
-    [CMD_POP]   = {"POP",  BIT_REG}
+    [CMD_HLT]   = {"HLT",  0,                 0},
+    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG, 0},
+    [CMD_ADD]   = {"ADD",  0,                 0},
+    [CMD_SUB]   = {"SUB",  0,                 0},
+    [CMD_MUL]   = {"MUL",  0,                 0},
+    [CMD_DIV]   = {"DIV",  0,                 0},
+    [CMD_OUT]   = {"OUT",  0,                 0},
+    [CMD_POP]   = {"POP",  BIT_REG,           0},
+    [CMD_JMP]   = {"JMP",  BIT_IMM,           1}
 };
 //=======================================================================================================================//
 

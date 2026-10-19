@@ -21,6 +21,7 @@ const char* cpu_strerror(cpu_err_t err)
         case CPU_MISSING_ARG:     return "MISSING ARGUMENT IN CPU";
         case CPU_PC_OUT_OF_RANGE: return "PROGRAM COUNTER CORRUPTED";
         case CPU_BAD_REGISTER:    return "BAD REGISTER NUMBER";
+        case CPU_BAD_ADDRESS:     return "JMP TO BAD ADDRESS";
         default:                  return "UNKNOWN CPU ERROR";
     }
 }
@@ -186,6 +187,15 @@ static cpu_err_t op_pop(CPU* cpu, const Operand* opd)
     return CPU_OK;
 }
 
+static cpu_err_t op_jmp(CPU* cpu, const Operand* opd)
+{
+    if (opd->imm < 0 ||
+        opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
+
+    cpu->pc = opd->imm;
+    return CPU_OK;
+}
+
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
 {
@@ -197,6 +207,7 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_DIV]  = op_div,
     [CMD_OUT]  = op_out,
     [CMD_POP]  = op_pop,
+    [CMD_JMP]  = op_jmp,
 };
 //============================================================================
 

@@ -27,7 +27,8 @@ typedef enum
     CPU_UNKNOWN_OPCODE  = 3,
     CPU_MISSING_ARG     = 4,
     CPU_PC_OUT_OF_RANGE = 5,
-    CPU_BAD_REGISTER    = 6
+    CPU_BAD_REGISTER    = 6,
+    CPU_BAD_ADDRESS     = 7
 } cpu_err_t;
 //==============================================
 

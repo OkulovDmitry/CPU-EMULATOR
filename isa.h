@@ -35,6 +35,7 @@ typedef enum
     CMD_DIV  = 5,
     CMD_OUT  = 6,
     CMD_POP  = 7,
+    CMD_JMP  = 8,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;
@@ -45,6 +46,7 @@ typedef struct
 {
     const char* name;
     int         allowed;   // разврешённые флаги
+    int         is_jump;   // 1, если команда в качестве аргумента может принимать метки
 } CommandInfo;
 //==============================================================================
 
