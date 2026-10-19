@@ -16,12 +16,13 @@ code_t* bytecode_read(const char* path, int* size)
     }
 
     int count = 0;                                                      // количество считанных команд и их аргументов - размер bytecode
-    int value = 0;                                                      // принимаемый код операции
-    while (fscanf(in, "%d", &value) == 1)
+    long long raw = 0;                                                  // принимаемый код операции
+    while (fscanf(in, "%lld", &raw) == 1)
     {
+        code_t value = (code_t)raw;
         if (!(isa_cell_ok(value)))                                      // проверка совместимости флагов и команды
         {
-            fprintf(stderr, "%s: bad opcode %d\n", path, value);
+            fprintf(stderr, "%s: bad opcode %" PRIu64 "\n", path, value);
             free(bytecode);
             fclose(in);
             return NULL;
@@ -46,16 +47,16 @@ code_t* bytecode_read(const char* path, int* size)
 
         for (int i = 0; i < number_of_flags; i++)
         {
-            int arg = 0;
+            long long arg = 0;
 
-            if (fscanf(in, "%d", &arg) != 1)                            // если вошли в цикл - аргумент должен быть
+            if (fscanf(in, "%lld", &arg) != 1)                            // если вошли в цикл - аргумент должен быть
             {
                 free(bytecode);
                 fclose(in);
                 fprintf(stderr, "error in read of %s, bytecode_read() cant read end of file\n", path);
                 return NULL;
             }
-            bytecode[count++] = arg;
+            bytecode[count++] = (code_t)arg;
         }
     }         
 
@@ -80,7 +81,7 @@ int bytecode_write(const char* path, const code_t* code, const int size)
     if (out == NULL) { perror(path); return -1; }
 
     for (int i = 0; i < size; i++)
-        fprintf(out, "%d%c", code[i], i + 1 < size ? ' ' : '\n');
+        fprintf(out, "%lld%c", (long long)code[i], i + 1 < size ? ' ' : '\n');
 
     fclose(out);
     return 0;

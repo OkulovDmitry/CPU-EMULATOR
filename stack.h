@@ -9,9 +9,9 @@
 #include <inttypes.h>
 
 //===================================== Режимы компиляции =====================================
-#define STKDEBUG
+//#define STKDEBUG
 #define STK_CANARY
-//#define STK_HASH
+#define STK_HASH
 #define STK_ABORT_ON_CORRUPT
 
 #ifdef STKDEBUG
@@ -101,7 +101,7 @@ void stack_dump(const char* out,
                 const my_stack_t* stk, 
                 const char* name, 
                 int line, 
-                const char* functionm, 
+                const char* function,
                 const char* file_name);
 err_t stack_verify(const my_stack_t* stk);
 

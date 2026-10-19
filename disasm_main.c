@@ -54,7 +54,7 @@ int disassembler(const char* path, const code_t* code, const int size)
 
         if(!(isa_cell_ok(cell)))
         {
-            fprintf(stderr, "disasm: bad opcode %d at %i\n", code[ind], ind);
+            fprintf(stderr, "disasm: bad opcode %" PRIu64 " at %i\n", code[ind], ind);
             fclose(out);
             return -1;
         }
@@ -75,20 +75,20 @@ int disassembler(const char* path, const code_t* code, const int size)
 
         if (flags & BIT_REG)
         {
-            int reg = code[ind++];
-
-            if (reg < 0 || reg >= REG_COUNT)
+            code_t r = code[ind++];
+            if (r >= REG_COUNT)
             {
-                fprintf(stderr, "disasm: bad register %d\n", reg);
+                fprintf(stderr, "disasm: bad register %lu\n", r);
                 fclose(out);
                 return -1;
             }
+            int reg = (int)r;
 
             fprintf(out, " %s", reg_names[reg]);
         }
 
         if (flags & BIT_IMM) 
-            fprintf(out, " %d", code[ind++]);
+            fprintf(out, " %" PRIu64, code[ind++]);
 
         fprintf(out, "\n");
     }

@@ -196,7 +196,7 @@ code_t* assembler(const char* path, int* size)
             }
 
             int flags   = 0;
-            int operand = 0;
+            code_t operand = 0;
 
             if (isa[op].allowed != 0)
             {
@@ -222,7 +222,7 @@ code_t* assembler(const char* path, int* size)
                 else
                 {
                     char* endp = NULL;
-                    operand    = strtol(arg_text, &endp, 10);
+                    operand    = strtoll(arg_text, &endp, 10);
 
                     if (!(endp == arg_text || *endp != '\0'))
                     {

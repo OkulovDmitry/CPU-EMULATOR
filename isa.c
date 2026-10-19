@@ -8,26 +8,28 @@
 
 #include "isa.h"
 
+#define CELL_ALL_BITS (CMD_MASK | BIT_IMM | BIT_REG | BIT_MEM | BIT_FLT)
+
 //==== isa - этот массив определяет какие команды может исполнять процессор на физическом уровне и определяет их тип ====/
 const CommandInfo isa[CMD_COUNT] =
 {
-    [CMD_HLT]   = {"HLT",  0,                 0},
-    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG, 0},
-    [CMD_ADD]   = {"ADD",  0,                 0},
-    [CMD_SUB]   = {"SUB",  0,                 0},
-    [CMD_MUL]   = {"MUL",  0,                 0},
-    [CMD_DIV]   = {"DIV",  0,                 0},
-    [CMD_OUT]   = {"OUT",  0,                 0},
-    [CMD_POP]   = {"POP",  BIT_REG,           0},
-    [CMD_JMP]   = {"JMP",  BIT_IMM,           1},
-    [CMD_JA]    = {"JA",   BIT_IMM,           1},
-    [CMD_JAE]   = {"JAE",  BIT_IMM,           1},
-    [CMD_JB]    = {"JB",   BIT_IMM,           1},
-    [CMD_JBE]   = {"JBE",  BIT_IMM,           1},
-    [CMD_JE]    = {"JE",   BIT_IMM,           1},
-    [CMD_JNE]   = {"JNE",  BIT_IMM,           1},
-    [CMD_CALL]  = {"CALL", BIT_IMM,           1}, 
-    [CMD_RET]   = {"RET",  0,                 0},
+    [CMD_HLT]   = {"HLT",  0,                           0},
+    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG | BIT_FLT, 0},
+    [CMD_ADD]   = {"ADD",  0,                           0},
+    [CMD_SUB]   = {"SUB",  0,                           0},
+    [CMD_MUL]   = {"MUL",  0,                           0},
+    [CMD_DIV]   = {"DIV",  0,                           0},
+    [CMD_OUT]   = {"OUT",  0,                           0},
+    [CMD_POP]   = {"POP",  BIT_REG,                     0},
+    [CMD_JMP]   = {"JMP",  BIT_IMM,                     1},
+    [CMD_JA]    = {"JA",   BIT_IMM,                     1},
+    [CMD_JAE]   = {"JAE",  BIT_IMM,                     1},
+    [CMD_JB]    = {"JB",   BIT_IMM,                     1},
+    [CMD_JBE]   = {"JBE",  BIT_IMM,                     1},
+    [CMD_JE]    = {"JE",   BIT_IMM,                     1},
+    [CMD_JNE]   = {"JNE",  BIT_IMM,                     1},
+    [CMD_CALL]  = {"CALL", BIT_IMM,                     1}, 
+    [CMD_RET]   = {"RET",  0,                           0},
 };
 //=======================================================================================================================//
 
@@ -44,19 +46,22 @@ const char* const reg_names[REG_COUNT] =
 //============ is_valid_opcode - проверяет валидность команды к процессору ============
 bool is_valid_opcode(code_t v)
 {
-    return 0 <= v && v < CMD_COUNT;
+    return v < CMD_COUNT;
 }
 //=====================================================================================
 
 //============ isa_cell_ok - проверяет совместимость флагов и команды ============
 bool isa_cell_ok(code_t cell)
 {
+    if ((cell & ~(code_t)CELL_ALL_BITS) != 0) return false;   // мусор в старших битах
+
     int op    = CELL_OP(cell);
     int flags = CELL_FLAGS(cell);
 
-    if (!(is_valid_opcode(op)))               return false;  // является ли команда валидной
-    if ((flags & ~isa[op].allowed)     != 0)  return false;  // проверка на лишний флаг
-    if (isa[op].allowed != 0 && flags == 0)   return false;  // проверка на наличие флага у команды с обязательным наличием флага
+    if (!(is_valid_opcode(op)))                  return false;  // является ли команда валидной
+    if ((flags & ~isa[op].allowed)     != 0)     return false;  // проверка на лишний флаг
+    if (isa[op].allowed != 0 && flags == 0)      return false;  // проверка на наличие флага у команды с обязательным наличием флага
+    if ((flags & BIT_FLT) && !(flags & BIT_IMM))  return false;  // флаг BIT_FLT для вещественных бессмысленен без флага чисел BIT_IMM
 
     return true;
 }
@@ -93,3 +98,21 @@ int find_register(const char* word)
     return -1;
 }
 //=========================================================================
+
+//========= double_to_cell - позволяет перенести биты double в uint64_t =========
+code_t double_to_cell(Elem_t d)
+{
+    code_t c;
+    memcpy(&c, &d, sizeof(c));
+    return c;
+}
+//===============================================================================
+
+//========= cell_to_double - позволяет перенести биты uint64_t в double =========
+Elem_t cell_to_double(code_t c)
+{
+    Elem_t d;
+    memcpy(&d, &c, sizeof(d));
+    return d;
+}
+//===============================================================================

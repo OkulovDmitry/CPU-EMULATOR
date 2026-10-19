@@ -75,13 +75,13 @@ typedef struct
 {
     int    flags;  // какие операнды есть
     int    reg;    // регистр (если BIT_REG)
-    code_t imm;    // число   (если BIT_IMM)
+    code_t imm;    // сырая ячейка
+    Elem_t num;    // число как double (для PUSH)
 } Operand;
 
 static cpu_err_t do_jump(CPU* cpu, const Operand* opd)
 {
-    if (opd->imm < 0 ||
-        opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
+    if (opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
 
     cpu->pc = opd->imm;
     return CPU_OK;
@@ -115,7 +115,7 @@ static cpu_err_t op_push(CPU* cpu, const Operand* opd)
 {
     Elem_t value = 0;
     if (opd->flags & BIT_REG)  value += cpu->regs[opd->reg];
-    if (opd->flags & BIT_IMM)  value += opd->imm;
+    if (opd->flags & BIT_IMM)  value += opd->num;
 
     cpu->stack_err = stack_push(&cpu->stack, value);
 
@@ -286,13 +286,13 @@ cpu_err_t cpu_run(CPU* cpu)
         if (!(isa_cell_ok(cell)) ||
             handlers[CELL_OP(cell)] == NULL)
         {
-            fprintf(stderr, "cpu: %s %d (pc = %d)\n", cpu_strerror(CPU_UNKNOWN_OPCODE), cell, cpu->pc - 1);
+            fprintf(stderr, "cpu: %s %lld (pc = %d)\n", cpu_strerror(CPU_UNKNOWN_OPCODE), (long long)cell, cpu->pc - 1);
             return CPU_UNKNOWN_OPCODE;
         }
 
         int    op    = CELL_OP(cell);
         int    flags = CELL_FLAGS(cell);
-        Operand opd  = {.flags = flags, .imm = 0, .reg = 0};
+        Operand opd  = {.flags = flags, .imm = 0, .num = 0, .reg = 0};
 
         if (cpu->pc + operand_cells(opd.flags) > (int)cpu->code_size)
         {
@@ -302,17 +302,19 @@ cpu_err_t cpu_run(CPU* cpu)
 
         if (flags & BIT_REG)
         {
-            opd.reg = cpu->code[cpu->pc++];
-            if (opd.reg < 0 || opd.reg >= REG_COUNT)
+            code_t r = cpu->code[cpu->pc++];
+            if (r >= REG_COUNT)
             {
-                fprintf(stderr, "cpu: %s %d in %s\n", cpu_strerror(CPU_BAD_REGISTER), opd.reg, isa[op].name);
+                fprintf(stderr, "cpu: %s %lu in %s\n", cpu_strerror(CPU_BAD_REGISTER), r, isa[op].name);
                 return CPU_BAD_REGISTER;
             }
+            opd.reg = (int)r;
         }
 
         if (flags & BIT_IMM)
         {
             opd.imm = cpu->code[cpu->pc++];
+            opd.num = (flags & BIT_FLT) ? cell_to_double(opd.imm) : 0;
         }
 
         cpu_err_t err = handlers[op](cpu, &opd);
@@ -326,6 +328,8 @@ cpu_err_t cpu_run(CPU* cpu)
             fprintf(stderr, "cpu: %s in %s\n", cpu_strerror(err), isa[op].name);
             return err;
         }
+
+        stack_dump("errors.log", &cpu->stack, "stk", __LINE__, __func__, __FILE__);
     }
     return CPU_OK;
 }
