@@ -42,6 +42,8 @@ typedef enum
     CMD_JBE  = 12,
     CMD_JE   = 13,
     CMD_JNE  = 14,
+    CMD_CALL = 15,
+    CMD_RET  = 16,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;

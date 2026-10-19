@@ -22,6 +22,8 @@ const char* cpu_strerror(cpu_err_t err)
         case CPU_PC_OUT_OF_RANGE: return "PROGRAM COUNTER CORRUPTED";
         case CPU_BAD_REGISTER:    return "BAD REGISTER NUMBER";
         case CPU_BAD_ADDRESS:     return "JMP TO BAD ADDRESS";
+        case CPU_CALL_OVERFLOW:   return "CALL STACK IS OVERFLOW";
+        case CPU_RET_EMPTY:       return "RET WITHOUT CALL";
         default:                  return "UNKNOWN CPU ERROR";
     }
 }
@@ -40,6 +42,7 @@ cpu_err_t cpu_ctor(CPU* cpu, code_t* code, size_t code_size)
     }
 
     cpu->running    = 1;
+    cpu->call_sp    = 0;
     cpu->stack_err  = stack_ctor(&cpu->stack,
                                  16
                                  STACK_PLACE_OUT("cpu.stack"));
@@ -222,6 +225,29 @@ static cpu_err_t op_jbe (CPU* cpu, const Operand* opd){ return cond_jump (cpu, o
 static cpu_err_t op_je  (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_e); }
 static cpu_err_t op_jne (CPU* cpu, const Operand* opd){ return cond_jump (cpu, opd, cmp_ne); }
 
+static cpu_err_t op_call(CPU* cpu, const Operand* opd)
+{
+    if (cpu->call_sp >= CALL_STACK_SIZE) return CPU_CALL_OVERFLOW;
+
+    int return_addr = cpu->pc;   // адрес команды после call
+
+    cpu_err_t err = do_jump(cpu, opd);
+    if (err != CPU_OK) return err;
+
+    cpu->call_stack[cpu->call_sp++] = return_addr;
+
+    return CPU_OK;
+}
+
+static cpu_err_t op_ret(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+    if (cpu->call_sp == 0) return CPU_RET_EMPTY;
+
+    cpu->pc = cpu->call_stack[--cpu->call_sp];
+    return CPU_OK;
+}
+
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
 {
@@ -240,6 +266,8 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_JBE]  = op_jbe,
     [CMD_JE]   = op_je,
     [CMD_JNE]  = op_jne,
+    [CMD_CALL] = op_call,
+    [CMD_RET]  = op_ret
 };
 //============================================================================
 

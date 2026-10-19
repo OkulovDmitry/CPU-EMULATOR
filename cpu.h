@@ -18,6 +18,8 @@
 #include "stack.h"
 #include "isa.h"
 
+#define CALL_STACK_SIZE 256
+
 //===== cpu_err_t коды процессорных ошибок =====
 typedef enum
 {
@@ -28,7 +30,9 @@ typedef enum
     CPU_MISSING_ARG     = 4,
     CPU_PC_OUT_OF_RANGE = 5,
     CPU_BAD_REGISTER    = 6,
-    CPU_BAD_ADDRESS     = 7
+    CPU_BAD_ADDRESS     = 7,
+    CPU_CALL_OVERFLOW   = 8,
+    CPU_RET_EMPTY       = 9,
 } cpu_err_t;
 //==============================================
 
@@ -36,12 +40,14 @@ typedef enum
 typedef struct
 {
     my_stack_t  stack;
-    code_t*     code;              // наш байт-код
-    size_t      code_size;         // количество чисел в массиве
-    Elem_t      regs[REG_COUNT];   // массив регистров процессора
-    int         pc;                // для будущих JMP
-    int         running;           // запущена ли прога
-    err_t       stack_err;         // последняя ошибка стека 
+    code_t*     code;                         // наш байт-код
+    size_t      code_size;                    // количество чисел в массиве
+    Elem_t      regs[REG_COUNT];              // массив регистров процессора
+    int         pc;                           // для JMP
+    int         running;                      // запущена ли прога
+    int         call_stack[CALL_STACK_SIZE];  // адреса возврата
+    int         call_sp;                      //количество адресов в call стеке
+    err_t       stack_err;                    // последняя ошибка стека 
 } CPU;
 //=============================================================
 

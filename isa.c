@@ -26,6 +26,8 @@ const CommandInfo isa[CMD_COUNT] =
     [CMD_JBE]   = {"JBE",  BIT_IMM,           1},
     [CMD_JE]    = {"JE",   BIT_IMM,           1},
     [CMD_JNE]   = {"JNE",  BIT_IMM,           1},
+    [CMD_CALL]  = {"CALL", BIT_IMM,           1}, 
+    [CMD_RET]   = {"RET",  0,                 0},
 };
 //=======================================================================================================================//
 
