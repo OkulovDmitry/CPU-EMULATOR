@@ -24,14 +24,14 @@ disasm: $(DIS_OBJ)
 -include $(wildcard *.d)
 
 test: all
-	./asm input.txt byte_code.txt
-	./cpu byte_code.txt
-	./disasm byte_code.txt output.txt
-	./asm output.txt byte_code2.txt
-	diff byte_code.txt byte_code2.txt
+	./asm input.txt byte_code.bin
+	./cpu byte_code.bin
+	./disasm byte_code.bin output.txt
+	./asm output.txt byte_code2.bin
+	cmp byte_code.bin byte_code2.bin
 	@echo "ROUNDTRIP OK"
 
 clean:
-	rm -f asm cpu disasm *.o *.d
+	rm -f asm cpu disasm *.o *.d *.bin output.txt
 
 .PHONY: all test clean

@@ -17,6 +17,8 @@
 #include "stack.h"
 #include "isa.h"
 
+//xxd -g1 byte_code.bin | head - для написания с командной строке бинарного файлика
+
 #define BC_MAGIC   0x43424D56u   // байты 'V' 'M' 'B' 'C'
 #define BC_VERSION 1u
 
@@ -25,6 +27,7 @@ typedef struct
 {
     uint32_t magic;         // сигнатура формата, всегда BC_MAGIC
     uint32_t version;       // версия формата, на данный момент 1
+// сделать мажорную и минорную версию
     uint32_t count;         // количество ячеек code_t после заголовка
 } BytecodeHeader;
 //==========================================================================

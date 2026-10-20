@@ -30,10 +30,9 @@ const char* cpu_strerror(cpu_err_t err)
 //===================================================================
 
 //========================= cpu_ctor - создаёт cpu =============================
-cpu_err_t cpu_ctor(CPU* cpu, code_t* code, size_t code_size)
+cpu_err_t cpu_ctor(CPU* cpu)
 {
-    cpu->code       = code;
-    cpu->code_size  = code_size;
+    //cpu->code_size  = code_size;
     cpu->pc         = 0;
 
     for (int i = 0; i < REG_COUNT; i++)
@@ -41,32 +40,45 @@ cpu_err_t cpu_ctor(CPU* cpu, code_t* code, size_t code_size)
         cpu->regs[i] = ELEM_POISON;
     }
 
-    cpu->running    = 1;
-    cpu->call_sp    = 0;
-    cpu->stack_err  = stack_ctor(&cpu->stack,
-                                 16
-                                 STACK_PLACE_OUT("cpu.stack"));
+    cpu->running        = 1;
 
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    cpu->ram = (RAM*)malloc(sizeof(RAM));
+    (cpu->ram)->call_sp = 0;
+
+    char* temp = malloc(sizeof(my_stack_t));
+    if (temp == NULL) return CPU_STACK_FAIL;
+    
+    cpu->stack = (my_stack_t*)temp;
+    
+    (cpu->ram)->stack_err = stack_ctor(cpu->stack,
+                                16
+                                STACK_PLACE_OUT("cpu_stack"));
+
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //===============================================================================
 
 //=========================== cpu_dtor - разрушает cpu ===============================
 cpu_err_t cpu_dtor(CPU* cpu)
 {
-    cpu->stack_err = stack_dtor(&cpu->stack);
+    (cpu->ram)->stack_err = stack_dtor(cpu->stack);
+    free(cpu->stack);
 
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    err_t last_err = (cpu->ram)->stack_err;
+
+    free(cpu->ram);
+
+    return last_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //====================================================================================
 
 static cpu_err_t pop_two_elements(CPU* cpu, Elem_t* first_pop, Elem_t* second_pop)
 {
-    cpu->stack_err = stack_pop(&cpu->stack, first_pop);
-    if (cpu->stack_err != STACK_OK) return CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, first_pop);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
     
-    cpu->stack_err = stack_pop(&cpu->stack, second_pop);
-    if (cpu->stack_err != STACK_OK) return CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, second_pop);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
 
     return CPU_OK;
 }
@@ -81,7 +93,7 @@ typedef struct
 
 static cpu_err_t do_jump(CPU* cpu, const Operand* opd)
 {
-    if (opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
+    //if (opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
 
     cpu->pc = opd->imm;
     return CPU_OK;
@@ -117,9 +129,9 @@ static cpu_err_t op_push(CPU* cpu, const Operand* opd)
     if (opd->flags & BIT_REG)  value += cpu->regs[opd->reg];
     if (opd->flags & BIT_IMM)  value += opd->num;
 
-    cpu->stack_err = stack_push(&cpu->stack, value);
+    (cpu->ram)->stack_err = stack_push(cpu->stack, value);
 
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //======================================================================
 
@@ -132,8 +144,8 @@ static cpu_err_t op_add(CPU* cpu, const Operand* opd)
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
     if (err != CPU_OK) return err;
 
-    cpu->stack_err = stack_push(&cpu->stack, first_pop + second_pop);
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_push(cpu->stack, first_pop + second_pop);
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //===========================================================================================================================================
 
@@ -146,8 +158,8 @@ static cpu_err_t op_sub(CPU* cpu, const Operand* opd)
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
     if (err != CPU_OK) return err;
 
-    cpu->stack_err = stack_push(&cpu->stack, second_pop - first_pop);
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_push(cpu->stack, second_pop - first_pop);
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //==========================================================================================================================================
 
@@ -160,8 +172,8 @@ static cpu_err_t op_mul(CPU* cpu, const Operand* opd)
     cpu_err_t err = pop_two_elements(cpu, &first_pop, &second_pop);
     if (err != CPU_OK) return err;
 
-    cpu->stack_err = stack_push(&cpu->stack, first_pop * second_pop);
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_push(cpu->stack, first_pop * second_pop);
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //========================================================================================================================================
 
@@ -176,8 +188,8 @@ static cpu_err_t op_div(CPU* cpu, const Operand* opd)
  
     if (fabs(first_pop) < 1e-17) return CPU_DIV_BY_ZERO;
  
-    cpu->stack_err = stack_push(&cpu->stack, second_pop / first_pop);
-    return cpu->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_push(cpu->stack, second_pop / first_pop);
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
 }
 //===================================================================================================================================
 
@@ -187,8 +199,8 @@ static cpu_err_t op_out(CPU* cpu, const Operand* opd)
     (void)opd;
     Elem_t element;
 
-    cpu->stack_err = stack_pop(&cpu->stack, &element);
-    if (cpu->stack_err != STACK_OK) return CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &element);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
  
     printf(ELEM_PRINT "\n", element);
     return CPU_OK;
@@ -210,8 +222,8 @@ static cpu_err_t op_pop(CPU* cpu, const Operand* opd)
 {
     Elem_t value = 0;
 
-    cpu->stack_err = stack_pop(&cpu->stack, &value);
-    if (cpu->stack_err != STACK_OK) return CPU_STACK_FAIL;
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &value);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
 
     cpu->regs[opd->reg] = value;
     return CPU_OK;
@@ -227,14 +239,14 @@ static cpu_err_t op_jne (CPU* cpu, const Operand* opd){ return cond_jump (cpu, o
 
 static cpu_err_t op_call(CPU* cpu, const Operand* opd)
 {
-    if (cpu->call_sp >= CALL_STACK_SIZE) return CPU_CALL_OVERFLOW;
+    if ((cpu->ram)->call_sp >= CALL_STACK_SIZE) return CPU_CALL_OVERFLOW;
 
     int return_addr = cpu->pc;   // адрес команды после call
 
     cpu_err_t err = do_jump(cpu, opd);
     if (err != CPU_OK) return err;
 
-    cpu->call_stack[cpu->call_sp++] = return_addr;
+    (cpu->ram)->call_stack[(cpu->ram)->call_sp++] = return_addr;
 
     return CPU_OK;
 }
@@ -242,9 +254,9 @@ static cpu_err_t op_call(CPU* cpu, const Operand* opd)
 static cpu_err_t op_ret(CPU* cpu, const Operand* opd)
 {
     (void)opd;
-    if (cpu->call_sp == 0) return CPU_RET_EMPTY;
+    if ((cpu->ram)->call_sp == 0) return CPU_RET_EMPTY;
 
-    cpu->pc = cpu->call_stack[--cpu->call_sp];
+    cpu->pc = (cpu->ram)->call_stack[--(cpu->ram)->call_sp];
     return CPU_OK;
 }
 
@@ -272,17 +284,17 @@ static const op_func handlers[CMD_COUNT] =
 //============================================================================
 
 // ========================================== cpu_run - запускает процессор ==============================================
-cpu_err_t cpu_run(CPU* cpu)
+cpu_err_t cpu_run(CPU* cpu, code_t* code, int size)
 {
     while(cpu->running)
     {
-        if (cpu->pc < 0 || cpu->pc >= (int)(cpu->code_size))
+        if (cpu->pc < 0 || cpu->pc >= size)
         {
             fprintf(stderr, "cpu: %s (pc = %d)\n", cpu_strerror(CPU_PC_OUT_OF_RANGE), cpu->pc);
             return CPU_PC_OUT_OF_RANGE;
         }
 
-        code_t cell = cpu->code[cpu->pc++];
+        code_t cell = code[cpu->pc++];
         if (!(isa_cell_ok(cell)) ||
             handlers[CELL_OP(cell)] == NULL)
         {
@@ -294,7 +306,7 @@ cpu_err_t cpu_run(CPU* cpu)
         int    flags = CELL_FLAGS(cell);
         Operand opd  = {.flags = flags, .imm = 0, .num = 0, .reg = 0};
 
-        if (cpu->pc + operand_cells(opd.flags) > (int)cpu->code_size)
+        if (cpu->pc + operand_cells(opd.flags) > size)
         {
             fprintf(stderr, "cpu: %s for %s (pc = %d)\n", cpu_strerror(CPU_MISSING_ARG), isa[op].name, cpu->pc);
             return CPU_MISSING_ARG;
@@ -302,7 +314,7 @@ cpu_err_t cpu_run(CPU* cpu)
 
         if (flags & BIT_REG)
         {
-            code_t r = cpu->code[cpu->pc++];
+            code_t r = code[cpu->pc++];
             if (r >= REG_COUNT)
             {
                 fprintf(stderr, "cpu: %s %lu in %s\n", cpu_strerror(CPU_BAD_REGISTER), r, isa[op].name);
@@ -313,14 +325,14 @@ cpu_err_t cpu_run(CPU* cpu)
 
         if (flags & BIT_IMM)
         {
-            opd.imm = cpu->code[cpu->pc++];
+            opd.imm = code[cpu->pc++];
             opd.num = (flags & BIT_FLT) ? cell_to_double(opd.imm) : (Elem_t)(int64_t)opd.imm;
         }
 
         cpu_err_t err = handlers[op](cpu, &opd);
         if (err == CPU_STACK_FAIL)
         {
-            my_perror(isa[op].name, cpu->stack_err);
+            my_perror(isa[op].name, (cpu->ram)->stack_err);
             return err;
         }
         if (err != CPU_OK)

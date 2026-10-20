@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     }
 
     CPU cpu;
-    cpu_err_t err = cpu_ctor(&cpu, bytecode, size);
+    cpu_err_t err = cpu_ctor(&cpu);
     if (err != CPU_OK)
     {
         free(bytecode);
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    cpu_err_t run_err  = cpu_run(&cpu);
+    cpu_err_t run_err  = cpu_run (&cpu, bytecode, size);
     cpu_err_t dtor_err = cpu_dtor(&cpu);
 
     if (dtor_err != CPU_OK)

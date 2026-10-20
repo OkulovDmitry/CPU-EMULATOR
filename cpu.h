@@ -36,24 +36,28 @@ typedef enum
 } cpu_err_t;
 //==============================================
 
-//============ CPU - структура нашего процессора =============
 typedef struct
 {
-    my_stack_t  stack;
-    code_t*     code;                         // наш байт-код
-    size_t      code_size;                    // количество команд и аргументов в байт-коде
-    Elem_t      regs[REG_COUNT];              // массив регистров процессора
-    int         pc;                           // текущая исполняемая байт-кодом команда
-    int         running;                      // флаг на запуск программы
     int         call_stack[CALL_STACK_SIZE];  // адреса возврата
     int         call_sp;                      // количество адресов в call стеке
     err_t       stack_err;                    // последняя ошибка стека
+} RAM;
+
+
+//============ CPU - структура нашего процессора =============
+typedef struct
+{
+    my_stack_t* stack;
+    Elem_t      regs[REG_COUNT];              // массив регистров процессора
+    int         pc;                           // текущая исполняемая байт-кодом команда
+    int         running;                      // флаг на запуск программы
+    RAM*        ram;                          // оперативная память моего процессора
 } CPU;
 //=============================================================
 
-cpu_err_t   cpu_ctor(CPU* cpu, code_t* code, size_t code_size);  // функция создающая        cpu
+cpu_err_t   cpu_ctor(CPU* cpu);                                  // функция создающая        cpu
 cpu_err_t   cpu_dtor(CPU* cpu);                                  // функция разрушающая      cpu
-cpu_err_t   cpu_run( CPU* cpu);                                  // функция запускающая      cpu
+cpu_err_t   cpu_run(CPU* cpu, code_t* code, int size);           // функция запускающая      cpu
 const char* cpu_strerror(cpu_err_t err);                         // функция обработки ошибок cpu
 
 #endif //CPU_H
