@@ -314,7 +314,7 @@ cpu_err_t cpu_run(CPU* cpu)
         if (flags & BIT_IMM)
         {
             opd.imm = cpu->code[cpu->pc++];
-            opd.num = (flags & BIT_FLT) ? cell_to_double(opd.imm) : 0;
+            opd.num = (flags & BIT_FLT) ? cell_to_double(opd.imm) : (Elem_t)(int64_t)opd.imm;
         }
 
         cpu_err_t err = handlers[op](cpu, &opd);
@@ -329,7 +329,9 @@ cpu_err_t cpu_run(CPU* cpu)
             return err;
         }
 
+#ifdef CPUDEBUG
         stack_dump("errors.log", &cpu->stack, "stk", __LINE__, __func__, __FILE__);
+#endif
     }
     return CPU_OK;
 }

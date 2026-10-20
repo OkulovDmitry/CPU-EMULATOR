@@ -3,11 +3,48 @@
 //============ bytecode_read - производит полное чтение файла с байт кодом и производит его запись в Elem_t* ============
 code_t* bytecode_read(const char* path, int* size)
 {
-    FILE* in = fopen(path, "r");
+    FILE* in = fopen(path, "rb");
     if (in == NULL) { perror(path); return NULL; }
 
-    int capacity = 64;                                                  // первоначальный максимальный размер bytecode
-    code_t* bytecode = malloc(capacity * sizeof(code_t));
+    BytecodeHeader header;
+    if (fread(&header, sizeof(header), 1, in) != 1)
+    {
+        fprintf(stderr, "%s: file is too short for a header\n", path);
+        fclose(in);
+        return NULL;
+    }
+
+    if (header.magic != BC_MAGIC)
+    {
+        fprintf(stderr, "%s: not a bytecode file (bad magic)\n", path);
+        fclose(in);
+        return NULL;
+    }
+
+    if (header.version != BC_VERSION)
+    {
+        fprintf(stderr, "%s: unsupported bytecode version %u\n", path, header.version);
+        fclose(in);
+        return NULL;
+    }
+
+    // проверка на размер файла, который должен совпадать с заголовком
+    if (fseek(in, 0, SEEK_END) != 0) { perror(path); fclose(in); return NULL; }
+    long file_size = ftell(in);
+    if (file_size < 0)               { perror(path); fclose(in); return NULL; }
+
+    uint64_t payload = (uint64_t)file_size - sizeof(header);
+    if (payload % sizeof(code_t) != 0 || payload / sizeof(code_t) != header.count || header.count > INT_MAX)
+    {
+        fprintf(stderr, "%s: file size does not match header (count = %" PRIu32 ")\n", path, header.count);
+        fclose(in);
+        return NULL;
+    }
+
+    if (fseek(in, (long)sizeof(header), SEEK_SET) != 0) { perror(path); fclose(in); return NULL; }
+
+    size_t count = (size_t)header.count;                                                      // количество считанных команд и их аргументов - размер bytecode
+    code_t* bytecode = malloc((count ? count : 1) * sizeof(code_t));
     if (bytecode == NULL)
     {
         fclose(in);
@@ -15,61 +52,37 @@ code_t* bytecode_read(const char* path, int* size)
         return NULL;
     }
 
-    int count = 0;                                                      // количество считанных команд и их аргументов - размер bytecode
-    uint64_t raw = 0;                                                  // принимаемый код операции
-    while (fscanf(in, "%" SCNu64, &raw) == 1)
+    if (fread(bytecode, sizeof(code_t), count, in) != count)
     {
-        code_t value = (code_t)raw;
-        if (!(isa_cell_ok(value)))                                      // проверка совместимости флагов и команды
-        {
-            fprintf(stderr, "%s: bad opcode %" PRIu64 "\n", path, value);
-            free(bytecode);
-            fclose(in);
-            return NULL;
-        }
-        if (count + 3 > capacity)                                       // увеличение размеров bytecode при необходимости
-        {
-            code_t* bytecode_tmp = realloc(bytecode, 2 * capacity * sizeof(code_t));
-            if (bytecode_tmp == NULL)
-            {
-                free(bytecode);
-                fclose(in);
-                fprintf(stderr, "bytecode out of memory in file %s\n", path);
-                return NULL;
-            }
-            capacity *= 2;
-            bytecode = bytecode_tmp;
-        }
-
-        int op              = value;                                    // код операции
-        bytecode[count++]   = op;
-        int number_of_flags = operand_cells(CELL_FLAGS(value));         // подсчет количества операндов после команды
-
-        for (int i = 0; i < number_of_flags; i++)
-        {
-            uint64_t arg = 0;
-
-            if (fscanf(in, "%" SCNu64, &arg) != 1)                            // если вошли в цикл - аргумент должен быть
-            {
-                free(bytecode);
-                fclose(in);
-                fprintf(stderr, "error in read of %s, bytecode_read() cant read end of file\n", path);
-                return NULL;
-            }
-            bytecode[count++] = (code_t)arg;
-        }
-    }         
-
-    if(!(feof(in)))                                                      // проверка достижения конца файла  
-    {
+        fprintf(stderr, "%s: error reading bytecode\n", path);
         free(bytecode);
-        fprintf(stderr, "error in read of %s, bytecode_read() cant read end of file\n", path);
         fclose(in);
         return NULL;
     }
-
     fclose(in);
-    *size = count;
+
+    // проходимся по командам: проверка допустимости каждой команды и 
+    size_t i = 0;
+    while (i < count)
+    {
+        code_t cell = bytecode[i];
+        if (!(isa_cell_ok(cell)))                                      // проверка совместимости флагов и команды
+        {
+            fprintf(stderr, "%s: bad opcode %" PRIu64 "\n", path, cell);
+            free(bytecode);
+            return NULL;
+        }
+
+        i += 1 + (size_t)operand_cells(CELL_FLAGS(cell));
+        if (i > count)
+        {
+            fprintf(stderr, "%s: missing argument at end of file\n", path);
+            free(bytecode);
+            return NULL;
+        }
+    }
+
+    *size = (int)count;
     return bytecode;
 }
 //=======================================================================================================================
@@ -77,13 +90,20 @@ code_t* bytecode_read(const char* path, int* size)
 //============ bytecode_write - производит запись байт кода в файл ============
 int bytecode_write(const char* path, const code_t* code, const int size)
 {
-    FILE* out = fopen(path, "w");
+    FILE* out = fopen(path, "wb");
     if (out == NULL) { perror(path); return -1; }
 
-    for (int i = 0; i < size; i++)
-        fprintf(out, "%" PRIu64 "%c", code[i], i + 1 < size ? ' ' : '\n');
+    BytecodeHeader header = { .magic = BC_MAGIC, .version = BC_VERSION, .count = (uint64_t)size};
 
-    fclose(out);
+    if (fwrite(&header, sizeof(header), 1,            out) != 1 ||
+        fwrite(code,   sizeof(code_t), (size_t)size, out) != (size_t)size)
+    {
+        fprintf(stderr, "error writing %s\n", path);
+        fclose(out);
+        return -1;
+    }
+
+    if (fclose(out) != 0) { perror(path); return -1; };
     return 0;
 }
 //=============================================================================

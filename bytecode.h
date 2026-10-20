@@ -12,9 +12,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdbool.h>
 #include "stack.h"
 #include "isa.h"
+
+#define BC_MAGIC   0x43424D56u   // байты 'V' 'M' 'B' 'C'
+#define BC_VERSION 1u
+
+//========= BytecodeHeader - заголовок бинарногофайла с байт-кодом =========
+typedef struct
+{
+    uint32_t magic;         // сигнатура формата, всегда BC_MAGIC
+    uint32_t version;       // версия формата, на данный момент 1
+    uint32_t count;         // количество ячеек code_t после заголовка
+} BytecodeHeader;
+//==========================================================================
 
 code_t* bytecode_read( const char* path, int* size);                           // производит полное чтение файла с байт кодом и производит его запись в Elem_t*
 int     bytecode_write(const char* path, const code_t* code, const int size);  // производит запись байт кода в файл

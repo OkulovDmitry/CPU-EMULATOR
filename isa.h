@@ -10,6 +10,8 @@
 
 #include "stack.h"
 
+//#define CPUDEBUG
+
 #define CMD_MASK 0x1F      // младшие 5 бит - номер команды
 #define BIT_IMM  (1 << 5)  // дальше идёт число
 #define BIT_REG  (1 << 6)  // дальше идёт регистр

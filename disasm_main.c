@@ -78,7 +78,7 @@ int disassembler(const char* path, const code_t* code, const int size)
             code_t r = code[ind++];
             if (r >= REG_COUNT)
             {
-                fprintf(stderr, "disasm: bad register %lu\n", r);
+                fprintf(stderr, "disasm: bad register %" PRIu64 "\n", r);
                 fclose(out);
                 return -1;
             }
@@ -92,7 +92,7 @@ int disassembler(const char* path, const code_t* code, const int size)
             code_t imm = code[ind++];
 
             if (flags & BIT_FLT) fprintf(out, " " ELEM_FILE, cell_to_double(imm));  // double
-            else                 fprintf(out, " %" PRIu64, imm);
+            else                 fprintf(out, " %" PRIu64, imm);                    // целое: адрес для JMP, CALL
         }
 
         fprintf(out, "\n");
