@@ -213,11 +213,43 @@ code_t* assembler(const char* path, int* size)
 
                 used += arg_used;
 
+                bool is_memory = is_mem(arg_text);
                 int reg = find_register(arg_text);
-                if (reg != -1 && (isa[op].allowed & BIT_REG))
+
+                if (is_memory && !(isa[op].allowed & BIT_MEM))
                 {
-                    flags = BIT_REG;
-                    operand = reg;
+                    fprintf(stderr, "%s:%d: %s does not accept a memory operand\n", path, lineno, word);
+                    free(bytecode); fclose(in);
+                    return NULL;
+                }
+
+                if (reg != -1)
+                {
+                    if (!(isa[op].allowed & BIT_REG))
+                    {
+                        fprintf(stderr, "%s:%d: %s does not accept a register\n", path, lineno, word);
+                        free(bytecode);
+                        fclose(in);
+                        return NULL;
+                    }
+                    flags   = (is_memory ? BIT_MEM : 0) | BIT_REG;
+                    operand = (code_t)reg;
+                }
+                else if (is_memory)
+                {
+                    char*     endp = NULL;
+                    long long addr = strtoll(arg_text, &endp, 10);
+
+                    if (endp == arg_text || *endp != '\0' || addr < 0)
+                    {
+                        fprintf(stderr, "%s:%d: bad memory address '%s' for %s\n", path, lineno, arg_text, word);
+                        free(bytecode);
+                        fclose(in);
+                        return NULL;
+                    }
+
+                    flags   = BIT_MEM | BIT_IMM;
+                    operand = (code_t)addr;
                 }
                 else if (isa[op].is_jump)
                 {
@@ -270,21 +302,32 @@ code_t* assembler(const char* path, int* size)
                     char* endp = NULL;
                     double d   = strtod(arg_text, &endp);
 
-                    if (endp == arg_text || *endp != '\0' || !(isa[op].allowed & BIT_IMM))
+                    if (endp == arg_text || *endp != '\0')
                     {
-                        if (!(isa[op].allowed & BIT_IMM))
-                        {
-                            fprintf(stderr, "%s:%d: bad argument '%s' for %s\n", path, lineno, arg_text, word);
-                            free(bytecode);
-                            fclose(in);
-                            return NULL;
-                        }
-                        flags = BIT_IMM;
+                        fprintf(stderr, "%s:%d: bad argument '%s' for %s\n", path, lineno, arg_text, word);
+                        free(bytecode);
+                        fclose(in);
+                        return NULL;
+                    }
+                    
+                    if (!(isa[op].allowed & BIT_FLT))
+                    {
+                        fprintf(stderr, "%s:%d: %s does not accept a number\n", path, lineno, word);
+                        free(bytecode);
+                        fclose(in);
+                        return NULL;
                     }
 
                     operand = double_to_cell(d);
                     flags = BIT_IMM | (isa[op].allowed & BIT_FLT);
                 }
+            }
+
+            if (!isa_cell_ok((code_t)(op | flags)))
+            {
+                fprintf(stderr, "%s:%d: invalid operand for %s (cell=%" PRIu64 ", flags=%d, allowed=%d)\n", path, lineno, word, (code_t)(op | flags), flags, isa[op].allowed);
+                free(bytecode); fclose(in);
+                return NULL;
             }
 
             bytecode[count++] = (code_t)(op | flags);

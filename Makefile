@@ -23,12 +23,15 @@ disasm: $(DIS_OBJ)
 
 -include $(wildcard *.d)
 
+TESTS = input.txt output.txt
+
 test: all
-	./asm input.txt byte_code.bin
-	./cpu byte_code.bin
-	./disasm byte_code.bin output.txt
-	./asm output.txt byte_code2.bin
-	cmp byte_code.bin byte_code2.bin
+	@for t in $(TESTS); do \
+	    echo "== $$t"; \
+	    ./asm $$t byte_code.bin && ./cpu byte_code.bin && \
+	    ./disasm byte_code.bin output.txt && ./asm output.txt byte_code2.bin && \
+	    cmp byte_code.bin byte_code2.bin || exit 1; \
+	done
 	@echo "ROUNDTRIP OK"
 
 clean:

@@ -16,7 +16,7 @@
 #define BIT_IMM  (1 << 5)  // дальше идёт число
 #define BIT_REG  (1 << 6)  // дальше идёт регистр
 #define BIT_MEM  (1 << 7)  // операнд в оперативке
-#define BIT_FLT  (1 << 8)  //операнд-число хранит биты double
+#define BIT_FLT  (1 << 8)  // операнд-число хранит биты double
 
 #define CELL_OP(cell)    ((int)((cell) & (CMD_MASK)))            //ячейка операции
 #define CELL_FLAGS(cell) ((int)((cell) & (~(code_t)(CMD_MASK)))) //ячейка с флагами
@@ -47,6 +47,7 @@ typedef enum
     CMD_JNE  = 14,
     CMD_CALL = 15,
     CMD_RET  = 16,
+    CMD_DRAW = 17,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;
@@ -76,6 +77,7 @@ int  operand_cells(int flags);        // сколько ячеек операн�
 
 int  find_command( const char* word); // функция распознания команды
 int  find_register(const char* word); // функция распознания регистра
+bool is_mem(char* word);             // функция распознания видеопамяти
 
 code_t double_to_cell(Elem_t d);      // переносит 64 бита double в uint64_t
 Elem_t cell_to_double(code_t c);      // переносит 64 битф uint64_t в double

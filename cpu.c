@@ -24,15 +24,25 @@ const char* cpu_strerror(cpu_err_t err)
         case CPU_BAD_ADDRESS:     return "JMP TO BAD ADDRESS";
         case CPU_CALL_OVERFLOW:   return "CALL STACK IS OVERFLOW";
         case CPU_RET_EMPTY:       return "RET WITHOUT CALL";
+        case CPU_BAD_MEMORY:       return "MEMORY ADDRESS OUT OF RANGE";
+        case CPU_NO_MEMORY:       return "OUT OF MEMORY IN CPU";
         default:                  return "UNKNOWN CPU ERROR";
     }
 }
 //===================================================================
 
-//========================= cpu_ctor - создаёт cpu =============================
-cpu_err_t cpu_ctor(CPU* cpu)
+typedef struct
 {
-    //cpu->code_size  = code_size;
+    int    flags;  // какие операнды есть
+    int    reg;    // регистр (если BIT_REG)
+    code_t imm;    // сырая ячейка
+    Elem_t num;    // число как double (для PUSH)
+} Operand;
+
+//========================= cpu_ctor - создаёт cpu =============================
+cpu_err_t cpu_ctor(CPU* cpu, int code_size)
+{
+    cpu->code_size  = code_size;
     cpu->pc         = 0;
 
     for (int i = 0; i < REG_COUNT; i++)
@@ -42,11 +52,15 @@ cpu_err_t cpu_ctor(CPU* cpu)
 
     cpu->running        = 1;
 
-    cpu->ram = (RAM*)malloc(sizeof(RAM));
+    cpu->ram = (RAM*)calloc(1, sizeof(RAM));    if (cpu->ram == NULL) return CPU_NO_MEMORY;
     (cpu->ram)->call_sp = 0;
 
     char* temp = malloc(sizeof(my_stack_t));
-    if (temp == NULL) return CPU_STACK_FAIL;
+    if (temp == NULL)
+    {
+        free(cpu->ram);
+        return CPU_NO_MEMORY;
+    }
     
     cpu->stack = (my_stack_t*)temp;
     
@@ -83,17 +97,25 @@ static cpu_err_t pop_two_elements(CPU* cpu, Elem_t* first_pop, Elem_t* second_po
     return CPU_OK;
 }
 
-typedef struct
+static cpu_err_t mem_address(const CPU* cpu, const Operand* opd, size_t* addr)
 {
-    int    flags;  // какие операнды есть
-    int    reg;    // регистр (если BIT_REG)
-    code_t imm;    // сырая ячейка
-    Elem_t num;    // число как double (для PUSH)
-} Operand;
+    if (opd->flags & BIT_REG)
+    {
+        Elem_t v = cpu->regs[opd->reg];
+        if (!(v >= 0 && v < VRAM_SIZE)) return CPU_BAD_MEMORY;
+        *addr = (size_t)v;
+    }
+    else
+    {
+        if (opd->imm >= VRAM_SIZE) return CPU_BAD_MEMORY;
+        *addr = (size_t)opd->imm;
+    }
+    return CPU_OK;
+}
 
 static cpu_err_t do_jump(CPU* cpu, const Operand* opd)
 {
-    //if (opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
+    if (opd->imm >= (code_t)cpu->code_size) return CPU_BAD_ADDRESS;
 
     cpu->pc = opd->imm;
     return CPU_OK;
@@ -126,8 +148,16 @@ typedef cpu_err_t (*op_func)(CPU* cpu, const Operand* opd);
 static cpu_err_t op_push(CPU* cpu, const Operand* opd)
 {
     Elem_t value = 0;
-    if (opd->flags & BIT_REG)  value += cpu->regs[opd->reg];
-    if (opd->flags & BIT_IMM)  value += opd->num;
+    if (opd->flags & BIT_MEM)
+    {
+        size_t addr = 0;
+        cpu_err_t err = mem_address(cpu, opd, &addr);
+        if (err != CPU_OK) return err;
+
+        value = (cpu->ram)->vram[addr];
+    }
+    else if (opd->flags & BIT_REG) value = cpu->regs[opd->reg];
+    else                           value = opd->num; 
 
     (cpu->ram)->stack_err = stack_push(cpu->stack, value);
 
@@ -220,12 +250,19 @@ static cpu_err_t op_hlt(CPU* cpu, const Operand* opd)
 
 static cpu_err_t op_pop(CPU* cpu, const Operand* opd)
 {
-    Elem_t value = 0;
+    size_t addr = 0;
+    if (opd->flags & BIT_MEM)
+    {
+        cpu_err_t err = mem_address(cpu, opd, &addr);
+        if (err != CPU_OK) return err;
+    }
 
+    Elem_t value = 0;
     (cpu->ram)->stack_err = stack_pop(cpu->stack, &value);
     if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
 
-    cpu->regs[opd->reg] = value;
+    if (opd->flags & BIT_MEM) (cpu->ram)->vram[addr] = value;   // POP [8] / POP [AX]
+    else                      cpu->regs[opd->reg]    = value;   // POP AX
     return CPU_OK;
 }
 
@@ -260,6 +297,18 @@ static cpu_err_t op_ret(CPU* cpu, const Operand* opd)
     return CPU_OK;
 }
 
+static cpu_err_t op_draw(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+    for (int y = 0; y < VRAM_H; y++)
+    {
+        for (int x = 0; x < VRAM_W; x++)
+            putchar(cpu->ram->vram[y * VRAM_W + x] != 0 ? '#' : '.');
+        putchar('\n');
+    }
+    return CPU_OK;
+}
+
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
 {
@@ -279,7 +328,8 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_JE]   = op_je,
     [CMD_JNE]  = op_jne,
     [CMD_CALL] = op_call,
-    [CMD_RET]  = op_ret
+    [CMD_RET]  = op_ret,
+    [CMD_DRAW] = op_draw
 };
 //============================================================================
 
@@ -317,7 +367,8 @@ cpu_err_t cpu_run(CPU* cpu, code_t* code, int size)
             code_t r = code[cpu->pc++];
             if (r >= REG_COUNT)
             {
-                fprintf(stderr, "cpu: %s %lu in %s\n", cpu_strerror(CPU_BAD_REGISTER), r, isa[op].name);
+                fprintf(stderr, "cpu: %s %llu in %s\n",
+                        cpu_strerror(CPU_BAD_REGISTER), (unsigned long long)r, isa[op].name);
                 return CPU_BAD_REGISTER;
             }
             opd.reg = (int)r;
@@ -342,7 +393,7 @@ cpu_err_t cpu_run(CPU* cpu, code_t* code, int size)
         }
 
 #ifdef CPUDEBUG
-        stack_dump("errors.log", &cpu->stack, "stk", __LINE__, __func__, __FILE__);
+        stack_dump("errors.log", cpu->stack, "stk", __LINE__, __func__, __FILE__);
 #endif
     }
     return CPU_OK;

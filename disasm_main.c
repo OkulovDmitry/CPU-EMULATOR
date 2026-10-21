@@ -73,6 +73,9 @@ int disassembler(const char* path, const code_t* code, const int size)
             return -1;
         }
 
+        const char* open_br  = (flags & BIT_MEM) ? " [" : " ";   // операнд в памяти печатаем в скобках
+        const char* close_br = (flags & BIT_MEM) ? "]"  : "";
+
         if (flags & BIT_REG)
         {
             code_t r = code[ind++];
@@ -83,16 +86,16 @@ int disassembler(const char* path, const code_t* code, const int size)
                 return -1;
             }
             int reg = (int)r;
-
-            fprintf(out, " %s", reg_names[reg]);
+            fprintf(out, "%s%s%s", open_br, reg_names[reg], close_br);
         }
+
 
         if (flags & BIT_IMM) 
         {
             code_t imm = code[ind++];
 
             if (flags & BIT_FLT) fprintf(out, " " ELEM_FILE, cell_to_double(imm));  // double
-            else                 fprintf(out, " %" PRIu64, imm);                    // целое: адрес для JMP, CALL
+            else                 fprintf(out, "%s%" PRIu64 "%s", open_br, imm, close_br);
         }
 
         fprintf(out, "\n");

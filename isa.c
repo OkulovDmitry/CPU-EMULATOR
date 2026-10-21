@@ -13,23 +13,24 @@
 //==== isa - этот массив определяет какие команды может исполнять процессор на физическом уровне и определяет их тип ====/
 const CommandInfo isa[CMD_COUNT] =
 {
-    [CMD_HLT]   = {"HLT",  0,                           0},
-    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG | BIT_FLT, 0},
-    [CMD_ADD]   = {"ADD",  0,                           0},
-    [CMD_SUB]   = {"SUB",  0,                           0},
-    [CMD_MUL]   = {"MUL",  0,                           0},
-    [CMD_DIV]   = {"DIV",  0,                           0},
-    [CMD_OUT]   = {"OUT",  0,                           0},
-    [CMD_POP]   = {"POP",  BIT_REG,                     0},
-    [CMD_JMP]   = {"JMP",  BIT_IMM,                     1},
-    [CMD_JA]    = {"JA",   BIT_IMM,                     1},
-    [CMD_JAE]   = {"JAE",  BIT_IMM,                     1},
-    [CMD_JB]    = {"JB",   BIT_IMM,                     1},
-    [CMD_JBE]   = {"JBE",  BIT_IMM,                     1},
-    [CMD_JE]    = {"JE",   BIT_IMM,                     1},
-    [CMD_JNE]   = {"JNE",  BIT_IMM,                     1},
-    [CMD_CALL]  = {"CALL", BIT_IMM,                     1}, 
-    [CMD_RET]   = {"RET",  0,                           0},
+    [CMD_HLT]   = {"HLT",  0,                                     0},
+    [CMD_PUSH]  = {"PUSH", BIT_IMM | BIT_REG | BIT_FLT | BIT_MEM, 0},
+    [CMD_ADD]   = {"ADD",  0,                                     0},
+    [CMD_SUB]   = {"SUB",  0,                                     0},
+    [CMD_MUL]   = {"MUL",  0,                                     0},
+    [CMD_DIV]   = {"DIV",  0,                                     0},
+    [CMD_OUT]   = {"OUT",  0,                                     0},
+    [CMD_POP]   = {"POP",  BIT_REG | BIT_IMM | BIT_MEM,           0},
+    [CMD_JMP]   = {"JMP",  BIT_IMM,                               1},
+    [CMD_JA]    = {"JA",   BIT_IMM,                               1},
+    [CMD_JAE]   = {"JAE",  BIT_IMM,                               1},
+    [CMD_JB]    = {"JB",   BIT_IMM,                               1},
+    [CMD_JBE]   = {"JBE",  BIT_IMM,                               1},
+    [CMD_JE]    = {"JE",   BIT_IMM,                               1},
+    [CMD_JNE]   = {"JNE",  BIT_IMM,                               1},
+    [CMD_CALL]  = {"CALL", BIT_IMM,                               1}, 
+    [CMD_RET]   = {"RET",  0,                                     0},
+    [CMD_DRAW]  = {"DRAW", 0,                                     0},
 };
 //=======================================================================================================================//
 
@@ -58,10 +59,14 @@ bool isa_cell_ok(code_t cell)
     int op    = CELL_OP(cell);
     int flags = CELL_FLAGS(cell);
 
-    if (!(is_valid_opcode(op)))                  return false;  // является ли команда валидной
-    if ((flags & ~isa[op].allowed)     != 0)     return false;  // проверка на лишний флаг
-    if (isa[op].allowed != 0 && flags == 0)      return false;  // проверка на наличие флага у команды с обязательным наличием флага
-    if ((flags & BIT_FLT) && !(flags & BIT_IMM))  return false;  // флаг BIT_FLT для вещественных бессмысленен без флага чисел BIT_IMM
+    if (!(is_valid_opcode(op)))                         return false;  // является ли команда валидной
+    if ((flags & ~isa[op].allowed)     != 0)            return false;  // проверка на лишний флаг
+    if (isa[op].allowed != 0 && flags == 0)             return false;  // проверка на наличие флага у команды с обязательным наличием флага
+    if ((flags & BIT_FLT) && !(flags & BIT_IMM))        return false;  // флаг BIT_FLT для вещественных бессмысленен без флага чисел BIT_IMM
+
+    if ((flags & BIT_MEM) && (flags & BIT_FLT))        return false;  //адрес не бывает дробным
+    if ((flags & BIT_MEM) && operand_cells(flags) != 1) return false;  // [AX] или [5]: ровно один операнд
+    if (op == CMD_POP && (flags & BIT_IMM) && !(flags & BIT_MEM))        return false;  // POP 5 не имеет смысла
 
     return true;
 }
@@ -98,6 +103,23 @@ int find_register(const char* word)
     return -1;
 }
 //=========================================================================
+
+bool is_mem(char* word)
+{
+    int len = 0;
+    while (word[len] != '\0')
+    {
+        len++;
+    }
+    if (word[0] == '[' && word[len - 1] == ']' && len >= 3)
+    {
+        memmove(word, word + 1, len - 2);
+        word[len - 2] = '\0';
+        return true;
+    }
+
+    return false;
+}
 
 //========= double_to_cell - позволяет перенести биты double в uint64_t =========
 code_t double_to_cell(Elem_t d)

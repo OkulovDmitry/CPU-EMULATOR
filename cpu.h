@@ -20,6 +20,10 @@
 
 #define CALL_STACK_SIZE 256
 
+#define VRAM_W    16                  // ширина экрана в ячейках
+#define VRAM_H    16                  // высота экрана в ячейках
+#define VRAM_SIZE (VRAM_W * VRAM_H)
+
 //===== cpu_err_t коды процессорных ошибок =====
 typedef enum
 {
@@ -33,14 +37,19 @@ typedef enum
     CPU_BAD_ADDRESS     = 7,
     CPU_CALL_OVERFLOW   = 8,
     CPU_RET_EMPTY       = 9,
+    CPU_BAD_MEMORY      = 10,
+    CPU_NO_MEMORY       = 11,
 } cpu_err_t;
 //==============================================
+
+
 
 typedef struct
 {
     int         call_stack[CALL_STACK_SIZE];  // адреса возврата
     int         call_sp;                      // количество адресов в call стеке
     err_t       stack_err;                    // последняя ошибка стека
+    Elem_t      vram[VRAM_SIZE];              // массив видеопамяти, PUSHM [4] - запись 67 в 4 ячейку POPM [8] - перезапись 67 из 4 в 8 ячейку
 } RAM;
 
 
@@ -49,13 +58,14 @@ typedef struct
 {
     my_stack_t* stack;
     Elem_t      regs[REG_COUNT];              // массив регистров процессора
+    int         code_size;
     int         pc;                           // текущая исполняемая байт-кодом команда
     int         running;                      // флаг на запуск программы
     RAM*        ram;                          // оперативная память моего процессора
 } CPU;
 //=============================================================
 
-cpu_err_t   cpu_ctor(CPU* cpu);                                  // функция создающая        cpu
+cpu_err_t   cpu_ctor(CPU* cpu, int code_size);                   // функция создающая        cpu
 cpu_err_t   cpu_dtor(CPU* cpu);                                  // функция разрушающая      cpu
 cpu_err_t   cpu_run(CPU* cpu, code_t* code, int size);           // функция запускающая      cpu
 const char* cpu_strerror(cpu_err_t err);                         // функция обработки ошибок cpu

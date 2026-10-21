@@ -107,3 +107,21 @@ int bytecode_write(const char* path, const code_t* code, const int size)
     return 0;
 }
 //=============================================================================
+
+/*int bytecode_decoder(const char* path, const char* path_dec)
+{
+    FILE* in = fopen(path, "rb");
+    if (in == NULL) { perror(path); return -1; }
+
+    int size = 0;
+    code_t bytecode = bytecode_read(in, &size);
+
+    FILE* out = fopen(path_dec, "wb");
+    if (out == NULL) { perror(path_dec); return -1; }
+
+    if (fseek(in, 0, SEEK_END) != 0) { perror(path); fclose(in); return NULL; }
+    long file_size = ftell(in);
+    if (fseek(in, (long)sizeof(BytecodeHeader), SEEK_SET) != 0) { perror(path); fclose(in); return NULL; }
+
+    fprintf(out, "%b", );
+}*/
