@@ -9,6 +9,10 @@
 #include "cpu.h"
 #include "isa.h"
 
+#define COLOR_RED     "\033[1;31m"
+#define COLOR_RESET   "\033[0m"
+#define CPU_STR(s) ((s) ? (s) : "?")
+
 //============ cpu_strerror - обрабатывает ошибки cpu ==============
 const char* cpu_strerror(cpu_err_t err)
 {
@@ -40,8 +44,15 @@ typedef struct
 } Operand;
 
 //========================= cpu_ctor - создаёт cpu =============================
-cpu_err_t cpu_ctor(CPU* cpu, int code_size)
+cpu_err_t cpu_ctor(CPU* cpu, int code_size CPU_PLACE_IN)
 {
+#ifdef CPU_PLACE_IN
+    cpu->name = name;
+    cpu->file = file;
+    cpu->line = line;
+    cpu->function = function;
+#endif
+
     cpu->code_size  = code_size;
     cpu->pc         = 0;
 
@@ -53,6 +64,10 @@ cpu_err_t cpu_ctor(CPU* cpu, int code_size)
     cpu->running        = 1;
 
     cpu->ram = (RAM*)calloc(1, sizeof(RAM));    if (cpu->ram == NULL) return CPU_NO_MEMORY;
+    for (int i = 0; i < VRAM_SIZE; i++)
+    {
+        cpu->ram->vram[i] = ELEM_POISON;
+    }
     (cpu->ram)->call_sp = 0;
 
     char* temp = malloc(sizeof(my_stack_t));
@@ -336,6 +351,7 @@ static const op_func handlers[CMD_COUNT] =
 // ========================================== cpu_run - запускает процессор ==============================================
 cpu_err_t cpu_run(CPU* cpu, code_t* code, int size)
 {
+    cpu->ram->code = code;
     while(cpu->running)
     {
         if (cpu->pc < 0 || cpu->pc >= size)
@@ -393,9 +409,99 @@ cpu_err_t cpu_run(CPU* cpu, code_t* code, int size)
         }
 
 #ifdef CPUDEBUG
-        stack_dump("errors.log", cpu->stack, "stk", __LINE__, __func__, __FILE__);
+        cpu_dump("errors.log", cpu, cpu->name, __LINE__, __func__, __FILE__);
 #endif
     }
     return CPU_OK;
 }
 //==========================================================================================================================
+
+void cpu_dump_to(FILE* file, const CPU* cpu, const char* name, int line, const char* function, const char* file_name)
+{
+    fprintf(file, CPU_SEP);
+
+    if (cpu == NULL)
+    {
+        fprintf(file, "CPU %s dumped from %s() at %s: %i\n", CPU_STR(name),      CPU_STR(function),      CPU_STR(file_name), line);
+        fprintf(file, "CPU = NULL\n");
+        fprintf(file, CPU_SEP);
+        return;
+    }
+#ifdef CPUDEBUG
+    if (name == NULL) name = cpu->name;
+    fprintf(file, "CPU %s created by %s() at %s: %i\n",  CPU_STR(cpu->name), CPU_STR(cpu->function), CPU_STR(cpu->file), cpu->line);
+#endif
+    fprintf(file, "CPU %s dumped from %s() at %s: %i\n", CPU_STR(name),      CPU_STR(function),      CPU_STR(file_name), line);
+
+    fprintf(file, "\n\n");
+
+    dump_to(file, cpu->stack, name, line , function, file_name);
+
+    fprintf(file, "\n\n");
+
+    fprintf(file, "size = %i\n", cpu->code_size);
+    if (cpu->running)
+    {
+        fprintf(file, "number of now running command: %i\n", cpu->pc);
+    }
+    else
+    {
+        fprintf(file, "CPU STOP\n");
+    }
+
+    for (int i = 0; i < cpu->code_size; i++)
+    {
+        if (i == cpu->pc) fprintf(file, COLOR_RED "%llu" COLOR_RESET " ", (unsigned long long)cpu->ram->code[i]);
+        else              fprintf(file, "%llu ", (unsigned long long)cpu->ram->code[i]);
+    }
+
+    fprintf(file, "\n===== CPU regisers dump =====\n");
+
+    fprintf(file, "number of registers = %i\n", REG_COUNT);
+
+    for (int i = 0; i < REG_COUNT; i++)
+    {
+        if (cpu->regs[i] == ELEM_POISON)
+        {
+            fprintf(file, "[%s]: 0x%08" PRIX32" (ELEM_POISON)\n", reg_names[i], (uint32_t)cpu->regs[i]);
+        }
+        else
+        {
+            fprintf(file, "%s: 0x%016" PRIX64 " (" ELEM_PRINT ")\n", reg_names[i], (uint64_t)cpu->regs[i], cpu->regs[i]);
+        }
+    }
+
+    fprintf(file, "=============================\n");
+
+    fprintf(file, "\n======================================== VRAM of CPU ========================================\n");
+
+    for (int y = 0; y < VRAM_H; y++)
+    {
+        for (int x = 0; x < VRAM_W; x++)
+        {
+            Elem_t v = cpu->ram->vram[y * VRAM_W + x];
+
+            if (v == ELEM_POISON) fprintf(file, "%7s ", "POISON");
+            else                  fprintf(file, "%7.3g ", v);
+        }
+        fputc('\n', file);
+    }
+
+    fprintf(file, "=============================================================================================\n");
+
+    fprintf(file, CPU_SEP);
+
+    fprintf(file, "\n\n\n");
+}
+
+void cpu_dump(const char* out, const CPU* cpu, const char* name, int line, const char* function, const char* file_name)
+{
+    FILE* file = fopen(out, "a");
+    if (file == NULL) {
+        perror("Error of open file");
+        return;
+    }
+
+    cpu_dump_to(file, cpu, name, line, function, file_name);
+    fclose(file);
+}

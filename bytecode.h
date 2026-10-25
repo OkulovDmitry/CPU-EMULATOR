@@ -19,15 +19,16 @@
 
 //xxd -g1 byte_code.bin | head - для написания с командной строке бинарного файлика
 
-#define BC_MAGIC   0x43424D56u   // байты 'V' 'M' 'B' 'C'
-#define BC_VERSION 1u
+#define BC_MAGIC         0x43424D56u   // байты 'V' 'M' 'B' 'C'
+#define BC_VERSION_MAJOR 2u            // меняется при несовместимых изменениях формата
+#define BC_VERSION_MINOR 0u            // меняется при совместимых дополнениях
 
 //========= BytecodeHeader - заголовок бинарногофайла с байт-кодом =========
 typedef struct
 {
     uint32_t magic;         // сигнатура формата, всегда BC_MAGIC
-    uint32_t version;       // версия формата, на данный момент 1
-// сделать мажорную и минорную версию
+    uint16_t major;
+    uint16_t minor;
     uint32_t count;         // количество ячеек code_t после заголовка
 } BytecodeHeader;
 //==========================================================================

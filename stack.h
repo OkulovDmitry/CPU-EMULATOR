@@ -9,7 +9,7 @@
 #include <inttypes.h>
 
 //===================================== Режимы компиляции =====================================
-//#define STKDEBUG
+#define STKDEBUG
 #define STK_CANARY
 #define STK_HASH
 #define STK_ABORT_ON_CORRUPT
@@ -55,7 +55,7 @@ typedef double Elem_t;
 #define ELEM_FMT   "%lf"   //format string for scanf
 #define ELEM_PRINT "%.5g"  //format string for
 #define ELEM_FILE  "%.17g"
-#define ELEM_POISON ((Elem_t)0x8BADF00D)
+#define ELEM_POISON ((Elem_t)0x8BADF00DU)
 //=====================================================
 
 //================ Тип для канарейки =================
@@ -96,6 +96,13 @@ err_t stack_pop( my_stack_t* stk,       Elem_t* out_value);
 err_t stack_top( const my_stack_t* stk, Elem_t* out_value);
 
 err_t stack_copy(my_stack_t* stk_dest, my_stack_t* stk_src STACK_PLACE_IN);
+
+void dump_to(FILE* file, 
+             const my_stack_t* stk, 
+             const char* name, 
+             int line, 
+             const char* function, 
+             const char* file_name);
 
 void stack_dump(const char* out, 
                 const my_stack_t* stk, 

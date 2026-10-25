@@ -64,7 +64,7 @@ bool isa_cell_ok(code_t cell)
     if (isa[op].allowed != 0 && flags == 0)             return false;  // проверка на наличие флага у команды с обязательным наличием флага
     if ((flags & BIT_FLT) && !(flags & BIT_IMM))        return false;  // флаг BIT_FLT для вещественных бессмысленен без флага чисел BIT_IMM
 
-    if ((flags & BIT_MEM) && (flags & BIT_FLT))        return false;  //адрес не бывает дробным
+    if ((flags & BIT_MEM) && (flags & BIT_FLT))         return false;  //адрес не бывает дробным
     if ((flags & BIT_MEM) && operand_cells(flags) != 1) return false;  // [AX] или [5]: ровно один операнд
     if (op == CMD_POP && (flags & BIT_IMM) && !(flags & BIT_MEM))        return false;  // POP 5 не имеет смысла
 

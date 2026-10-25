@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     }
 
     CPU cpu;
-    cpu_err_t err = cpu_ctor(&cpu, size);
+    cpu_err_t err = cpu_ctor(&cpu, size CPU_PLACE_OUT("FIRST_CPU"));
     if (err != CPU_OK)
     {
         free(bytecode);

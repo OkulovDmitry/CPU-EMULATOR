@@ -21,12 +21,21 @@ code_t* bytecode_read(const char* path, int* size)
         return NULL;
     }
 
-    if (header.version != BC_VERSION)
+    if (header.major != BC_VERSION_MAJOR)
     {
-        fprintf(stderr, "%s: unsupported bytecode version %u\n", path, header.version);
+        fprintf(stderr, "%s: unsupported bytecode major version %" PRIu16 " (this machine supports %u)\n",
+                path, header.major, BC_VERSION_MAJOR);
         fclose(in);
         return NULL;
     }
+
+    if (header.minor > BC_VERSION_MINOR)
+    {
+        fprintf(stderr, "%s: bytecode is newer than this machine understands (minor %" PRIu16 ", supported up to %u)\n",
+                path, header.minor, BC_VERSION_MINOR);
+        fclose(in);
+        return NULL;
+}
 
     // проверка на размер файла, который должен совпадать с заголовком
     if (fseek(in, 0, SEEK_END) != 0) { perror(path); fclose(in); return NULL; }
@@ -93,7 +102,7 @@ int bytecode_write(const char* path, const code_t* code, const int size)
     FILE* out = fopen(path, "wb");
     if (out == NULL) { perror(path); return -1; }
 
-    BytecodeHeader header = { .magic = BC_MAGIC, .version = BC_VERSION, .count = (uint64_t)size};
+    BytecodeHeader header = { .magic = BC_MAGIC, .major = BC_VERSION_MAJOR, .minor = BC_VERSION_MINOR, .count = (uint64_t)size};
 
     if (fwrite(&header, sizeof(header), 1,            out) != 1 ||
         fwrite(code,   sizeof(code_t), (size_t)size, out) != (size_t)size)
@@ -107,21 +116,3 @@ int bytecode_write(const char* path, const code_t* code, const int size)
     return 0;
 }
 //=============================================================================
-
-/*int bytecode_decoder(const char* path, const char* path_dec)
-{
-    FILE* in = fopen(path, "rb");
-    if (in == NULL) { perror(path); return -1; }
-
-    int size = 0;
-    code_t bytecode = bytecode_read(in, &size);
-
-    FILE* out = fopen(path_dec, "wb");
-    if (out == NULL) { perror(path_dec); return -1; }
-
-    if (fseek(in, 0, SEEK_END) != 0) { perror(path); fclose(in); return NULL; }
-    long file_size = ftell(in);
-    if (fseek(in, (long)sizeof(BytecodeHeader), SEEK_SET) != 0) { perror(path); fclose(in); return NULL; }
-
-    fprintf(out, "%b", );
-}*/

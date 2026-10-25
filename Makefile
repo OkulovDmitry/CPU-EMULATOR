@@ -6,24 +6,28 @@ COMMON  = bytecode.o     isa.o       stack.o
 ASM_OBJ = asm_main.o                 $(COMMON)
 DIS_OBJ = disasm_main.o              $(COMMON)
 CPU_OBJ = cpu_main.o     cpu.o       $(COMMON)
+DEC_OBJ = decoder_main.o             $(COMMON)
 
-all: asm cpu disasm
+all: asm cpu disasm decoder
 
 asm:    $(ASM_OBJ)
-	   $(CC) $(CFLAGS)    $^ -o $@
+	$(CC) $(LDFLAGS)   $^ -o $@
 
 cpu:    $(CPU_OBJ)
-	   $(CC) $(LDFLAGS)   $^ -o $@ -lm
+	$(CC) $(LDFLAGS)   $^ -o $@ -lm
 
 disasm: $(DIS_OBJ)
-	   $(CC) $(CFLAGS)    $^ -o $@
+	$(CC) $(LDFLAGS)   $^ -o $@
+
+decoder: $(DEC_OBJ)
+	$(CC) $(LDFLAGS)   $^ -o $@
 
 %.o: %.c
-	   $(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 -include $(wildcard *.d)
 
-TESTS = input.txt output.txt
+TESTS = input.txt
 
 test: all
 	@for t in $(TESTS); do \
@@ -35,6 +39,6 @@ test: all
 	@echo "ROUNDTRIP OK"
 
 clean:
-	rm -f asm cpu disasm *.o *.d *.bin output.txt
+	rm -f asm cpu disasm decoder *.o *.d *.bin output.txt
 
 .PHONY: all test clean
