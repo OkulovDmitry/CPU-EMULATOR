@@ -30,9 +30,9 @@ int main(int argc, char* argv[])
     }
     if (argc != 3)
     {
-        fprintf(stderr, "usage: %s [-x] <bytecode_in> <text_out>\n"
-                        "  without -x: table of cells in binary with explanation\n"
-                        "  with    -x: hex dump of the whole file, two characters per byte\n", argv[0]);
+        fprintf(stderr, "usage: %s [-hex] <bytecode_in> <text_out>\n"
+                        "  without -hex: table of cells in binary with explanation\n"
+                        "  with    -hex: hex dump of the whole file, two characters per byte\n", argv[0]);
         return 1;
     }
 

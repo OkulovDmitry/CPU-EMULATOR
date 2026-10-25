@@ -27,7 +27,7 @@ decoder: $(DEC_OBJ)
 
 -include $(wildcard *.d)
 
-TESTS = input.txt
+TESTS = tests/input.txt tests/call.txt
 
 test: all
 	@for t in $(TESTS); do \
