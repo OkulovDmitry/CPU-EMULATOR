@@ -561,6 +561,7 @@ Instruction Set Architecture: описание того, что умеет де�
 | метка(использование) | `JMP loop` | 40 <адрес> | |
 
 #### Общая схема работы
+```text
             input.txt
                 |
                 |
@@ -581,6 +582,7 @@ Instruction Set Architecture: описание того, что умеет де�
                 V
         bytecode_write()
      (при отсутствии ошибок)
+```
 
 </details>
 
