@@ -14,7 +14,7 @@ asm:    $(ASM_OBJ)
 	$(CC) $(LDFLAGS)   $^ -o $@
 
 cpu:    $(CPU_OBJ)
-	$(CC) $(LDFLAGS)   $^ -o $@ -lm
+	$(CC) $(LDFLAGS)   $^ -o $@
 
 disasm: $(DIS_OBJ)
 	$(CC) $(LDFLAGS)   $^ -o $@
@@ -27,7 +27,7 @@ decoder: $(DEC_OBJ)
 
 -include $(wildcard *.d)
 
-TESTS = tests/input.txt tests/call.txt
+TESTS = tests/input.txt tests/call.txt tests/draw_diagonal.txt
 
 test: all
 	@for t in $(TESTS); do \
