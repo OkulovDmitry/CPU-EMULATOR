@@ -585,7 +585,7 @@ Instruction Set Architecture: описание того, что умеет де�
 </details>
 
 <details>
-<summary> Подробный разбор работы функции `assembler()`
+<summary> Подробный разбор работы функции `assembler()`</summary>
 
 #### Разбор функции assembler()
 
