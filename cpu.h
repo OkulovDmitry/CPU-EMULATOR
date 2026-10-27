@@ -17,6 +17,7 @@
 #include <math.h>
 #include "stack.h"
 #include "isa.h"
+#include "display.h"
 
 #define CPUDEBUG
 
@@ -33,7 +34,6 @@
 #define VRAM_W       16                  // ширина экрана в ячейках
 #define VRAM_H       16                  // высота экрана в ячейках
 #define VRAM_SIZE    (VRAM_W * VRAM_H)
-#define PALETTE_SIZE 16                  // сколько цветов знает экран, 0...15 - это номер цвета 
 
 #define CPU_SEP "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
 

@@ -7,7 +7,6 @@
 /*=====================================================================================================================================================================================*/
 
 #include "cpu.h"
-#include "isa.h"
 
 #define COLOR_RED     "\033[1;31m"
 #define COLOR_RESET   "\033[0m"
@@ -111,15 +110,6 @@ static cpu_err_t pop_two_elements(CPU* cpu, Elem_t* first_pop, Elem_t* second_po
 
     return CPU_OK;
 }
-
-//=== palette_char - символ значения ячейки в текстовом режиме: 0 это '.', дальше цифра цвета в hex, неправильное значение это '?' ===
-static char palette_char(Elem_t v)
-{
-    if (!(v >= 0 && v < PALETTE_SIZE)) return '?';  // вне палитры, дробь больше 15 или Nan
-    int color = (int)v;                             // отброс дробной части
-    return ".123456789abcdef"[color];
-}
-//====================================================================================================================================
 
 static cpu_err_t mem_address(const CPU* cpu, const Operand* opd, size_t* addr)
 {
@@ -324,15 +314,7 @@ static cpu_err_t op_ret(CPU* cpu, const Operand* opd)
 static cpu_err_t op_draw(CPU* cpu, const Operand* opd)
 {
     (void)opd;
-    for (int y = 0; y < VRAM_H; y++)
-    {
-        for (int x = 0; x < VRAM_W; x++)
-        {
-            putchar(palette_char(cpu->ram->vram[y * VRAM_W + x]));
-            putchar(' ');  
-        }
-        putchar('\n');                                                //для придания квадратной формы клеткам(почти)
-    }
+    display_show(cpu->ram->vram, VRAM_W, VRAM_H);  // отдаём видеопамять экрану
     return CPU_OK;
 }
 

@@ -2,11 +2,11 @@ CC      = gcc
 CFLAGS  = -Wall -Wextra -Wshadow -g -fsanitize=address,undefined -MMD -MP
 LDFLAGS = -fsanitize=address,undefined
 
-COMMON  = bytecode.o     isa.o       stack.o
-ASM_OBJ = asm_main.o                 $(COMMON)
-DIS_OBJ = disasm_main.o              $(COMMON)
-CPU_OBJ = cpu_main.o     cpu.o       $(COMMON)
-DEC_OBJ = decoder_main.o             $(COMMON)
+COMMON  = bytecode.o       isa.o       stack.o
+ASM_OBJ = asm_main.o                                    $(COMMON)
+DIS_OBJ = disasm_main.o                                 $(COMMON)
+CPU_OBJ = cpu_main.o       cpu.o       display.o        $(COMMON)
+DEC_OBJ = decoder_main.o                                $(COMMON)
 
 all: asm cpu disasm decoder
 

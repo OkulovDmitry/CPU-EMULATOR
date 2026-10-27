@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "isa.h"
 #include "bytecode.h"
+#include "display.h"
 #include "cpu.h"
 
 int main(int argc, char* argv[])
@@ -31,7 +32,16 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    if (display_init(VRAM_W, VRAM_H) != 0)
+    {
+        cpu_dtor(&cpu);
+        free(bytecode);
+        fprintf(stderr, "display error: cannot init screen\n");
+        return 1;
+    }
+
     cpu_err_t run_err  = cpu_run (&cpu, bytecode, size);
+    display_close();
     cpu_err_t dtor_err = cpu_dtor(&cpu);
 
     if (dtor_err != CPU_OK)
