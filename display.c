@@ -29,6 +29,11 @@ void display_show(const Elem_t* vram, int width, int height)
     }
 }
 
+int display_should_close(void)
+{
+    return 0;  // для консоли бесполезно
+}
+
 void display_close(void)
 {
     // для консоли ниче не закрываем

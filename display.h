@@ -14,6 +14,7 @@
 
 int   display_init(int width, int height);
 void  display_show(const Elem_t* vram, int width, int height);
+int   display_should_close(void);
 void  display_close(void);
 
 #endif // DIDPLAY_H

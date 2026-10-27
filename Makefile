@@ -2,11 +2,20 @@ CC      = gcc
 CFLAGS  = -Wall -Wextra -Wshadow -g -fsanitize=address,undefined -MMD -MP
 LDFLAGS = -fsanitize=address,undefined
 
+# Режим 1: текстовый экран в консоли
+DISPLAY_MOD_CONSOLE = display.o
+
+# Режим 2: Графический экран Raylib
+DISPLAY_MOD_RAYLIB = display_raylib.o
+LIBS_RAYLIB = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+
+
+
 COMMON  = bytecode.o       isa.o       stack.o
-ASM_OBJ = asm_main.o                                    $(COMMON)
-DIS_OBJ = disasm_main.o                                 $(COMMON)
-CPU_OBJ = cpu_main.o       cpu.o       display.o        $(COMMON)
-DEC_OBJ = decoder_main.o                                $(COMMON)
+ASM_OBJ = asm_main.o                                    		$(COMMON)
+DIS_OBJ = disasm_main.o                                 		$(COMMON)
+CPU_OBJ = cpu_main.o       cpu.o       $(DISPLAY_MOD_RAYLIB)    $(COMMON)
+DEC_OBJ = decoder_main.o                               		    $(COMMON)
 
 all: asm cpu disasm decoder
 
@@ -14,7 +23,7 @@ asm:    $(ASM_OBJ)
 	$(CC) $(LDFLAGS)   $^ -o $@
 
 cpu:    $(CPU_OBJ)
-	$(CC) $(LDFLAGS)   $^ -o $@
+	$(CC) $(LDFLAGS)   $^ -o $@ $(LIBS_RAYLIB)
 
 disasm: $(DIS_OBJ)
 	$(CC) $(LDFLAGS)   $^ -o $@
