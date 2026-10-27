@@ -315,6 +315,7 @@ static cpu_err_t op_draw(CPU* cpu, const Operand* opd)
 {
     (void)opd;
     display_show(cpu->ram->vram, VRAM_W, VRAM_H);  // отдаём видеопамять экрану
+    if (display_should_close()) cpu->running = 0;  // окно закрыли посреди программы: останавливаем процессор, как по HLT
     return CPU_OK;
 }
 

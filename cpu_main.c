@@ -41,6 +41,9 @@ int main(int argc, char* argv[])
     }
 
     cpu_err_t run_err  = cpu_run (&cpu, bytecode, size);
+
+    // Процессор уже остановился (HLT), но держим окно открытым и жждем действий пользователя
+    display_wait_close(cpu.ram->vram, VRAM_W, VRAM_H);
     display_close();
     cpu_err_t dtor_err = cpu_dtor(&cpu);
 

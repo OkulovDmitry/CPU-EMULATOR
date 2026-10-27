@@ -34,6 +34,14 @@ int display_should_close(void)
     return 0;  // для консоли бесполезно
 }
 
+void  display_wait_close(const Elem_t* vram, int width, int height)
+{
+    (void)vram;
+    (void)width;
+    (void)height;
+    // в консоли ниче не ждем, последний кадр уже напечатан
+}
+
 void display_close(void)
 {
     // для консоли ниче не закрываем

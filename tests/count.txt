@@ -1,0 +1,13 @@
+        PUSH 3
+        POP AX
+loop:
+        PUSH AX
+        OUT
+        PUSH AX
+        PUSH 1
+        SUB
+        POP AX
+        PUSH AX
+        PUSH 0
+        JNE loop
+        HLT

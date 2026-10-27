@@ -31,7 +31,7 @@ int display_init(int width, int height)
     InitWindow(screen_width, screen_height, "VM Raylib Display");
     SetTargetFPS(60);
 
-    return WindowShouldClose() ? -1 : 0;
+    return IsWindowReady() ? 0 : -1;    
 }
 
 void display_show(const Elem_t* vram, int width, int height)
@@ -58,6 +58,14 @@ void display_show(const Elem_t* vram, int width, int height)
 int display_should_close(void)
 {
     return WindowShouldClose();
+}
+
+void display_wait_close(const Elem_t* vram, int width, int height)
+{
+    while (!WindowShouldClose())              // Esc или крестик
+    {
+        display_show(vram, width, height);    // перерисовываем последний кадр, чтобы окно не зависло
+    }
 }
 
 void display_close(void)
