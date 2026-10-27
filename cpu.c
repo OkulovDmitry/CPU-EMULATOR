@@ -292,12 +292,11 @@ static cpu_err_t op_call(CPU* cpu, const Operand* opd)
 {
     if ((cpu->ram)->call_sp >= CALL_STACK_SIZE) return CPU_CALL_OVERFLOW;
 
-    int return_addr = cpu->pc;   // адрес команды после call
+    int return_addr = cpu->pc + 2;   // адрес команды после call
+    (cpu->ram)->call_stack[(cpu->ram)->call_sp++] = return_addr;
 
     cpu_err_t err = do_jump(cpu, opd);
     if (err != CPU_OK) return err;
-
-    (cpu->ram)->call_stack[(cpu->ram)->call_sp++] = return_addr;
 
     return CPU_OK;
 }

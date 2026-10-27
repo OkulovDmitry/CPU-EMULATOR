@@ -68,7 +68,7 @@ static void explain(FILE* out, code_t cell, DecodeState* st)
             fprintf(out, " | number %s (double, bits are not an integer)", buf);
         }
         else if (st->flag & BIT_MEM) fprintf(out, " | memory cell number %llu", (unsigned long long)cell);
-        else if(isa[st->op].is_jump) fprintf(out, " | jump to celll %llu",      (unsigned long long)cell);
+        else if(isa[st->op].is_jump) fprintf(out, " | jump to cell %llu",      (unsigned long long)cell);
         else                         fprintf(out, " | integer %llu",            (unsigned long long)cell);
         return;
     }

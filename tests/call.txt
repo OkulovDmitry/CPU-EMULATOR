@@ -1,5 +1,5 @@
 ; Основной блок программы
-PUSH 1
+PUSH 2
 POP AX
 
 PUSH AX
