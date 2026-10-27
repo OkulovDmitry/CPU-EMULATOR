@@ -45,7 +45,7 @@ test: all
 	done
 	@echo "ROUNDTRIP OK"
 
-TESTS_GUI = tests/draw_diagonal.txt tests/first_animation.txt
+TESTS_GUI = tests/draw_diagonal.txt tests/first_animation.txt tests/second_animation.txt
 
 console_draw_test: all
 	@for t in $(TESTS_GUI); do \

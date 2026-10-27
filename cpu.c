@@ -319,6 +319,33 @@ static cpu_err_t op_draw(CPU* cpu, const Operand* opd)
     return CPU_OK;
 }
 
+static cpu_err_t op_cls(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+    for (int i = 0; i < VRAM_SIZE; i++)
+    {
+        cpu->ram->vram[i] = 0;
+    }
+    return CPU_OK;
+}
+
+static cpu_err_t op_sleep(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+    Elem_t ms = 0;
+
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &ms);
+
+    if (!(ms > 0)) return CPU_OK;                           //пока что в таких случаях тупо не спим
+    if (ms > SLEEP_MAX_MS) ms = SLEEP_MAX_MS;
+
+    struct timespec t = { .tv_sec  = (time_t)(ms / 1000),
+                          .tv_nsec = (long)(fmod(ms, 1000) * 1e6) };
+
+    nanosleep(&t, NULL);
+    return CPU_OK;
+}
+
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
 {
@@ -339,7 +366,9 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_JNE]  = op_jne,
     [CMD_CALL] = op_call,
     [CMD_RET]  = op_ret,
-    [CMD_DRAW] = op_draw
+    [CMD_DRAW] = op_draw,
+    [CMD_CLS]  = op_cls,
+    [CMD_SLEEP]= op_sleep,
 };
 //============================================================================
 

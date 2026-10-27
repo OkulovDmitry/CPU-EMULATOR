@@ -1,0 +1,18 @@
+; CLS и SLEEP укоротили first_animation
+PUSH 0
+POP AX          ; номер клетки с желтой точкой
+move:
+CLS
+PUSH 14         ; цвет желтый
+POP [AX]
+DRAW
+PUSH 100
+SLEEP
+PUSH AX         ; Увеличиваем индекс пикселя AX на 1:
+PUSH 1
+ADD
+POP AX          ; AX = AX + 1 (перемещаемся на следующую клетку)
+PUSH AX
+PUSH 16         ; Предполагается, что ширина экрана VRAM_W = 16 пикселей
+JB move         ; Если AX < 16, прыгаем в начало 'move' и рисуем точку в новой позиции
+HLT

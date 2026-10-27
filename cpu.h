@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 #include <math.h>
 #include "stack.h"
 #include "isa.h"
@@ -34,6 +35,8 @@
 #define VRAM_W       16                  // ширина экрана в ячейках
 #define VRAM_H       16                  // высота экрана в ячейках
 #define VRAM_SIZE    (VRAM_W * VRAM_H)
+
+#define SLEEP_MAX_MS 10000               // запрет спать дольше 10 секунд подряд
 
 #define CPU_SEP "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
 
