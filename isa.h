@@ -51,6 +51,7 @@ typedef enum
     CMD_DRAW =  18,
     CMD_CLS  =  19,
     CMD_SLEEP = 20,
+    CMD_IN    = 21,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;

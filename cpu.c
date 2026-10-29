@@ -27,8 +27,10 @@ const char* cpu_strerror(cpu_err_t err)
         case CPU_BAD_ADDRESS:     return "JMP TO BAD ADDRESS";
         case CPU_CALL_OVERFLOW:   return "CALL STACK IS OVERFLOW";
         case CPU_RET_EMPTY:       return "RET WITHOUT CALL";
-        case CPU_BAD_MEMORY:       return "MEMORY ADDRESS OUT OF RANGE";
+        case CPU_BAD_MEMORY:      return "MEMORY ADDRESS OUT OF RANGE";
         case CPU_NO_MEMORY:       return "OUT OF MEMORY IN CPU";
+        case CPU_SQRT_NEGATIVE:   return "NEGATIVE ELEMENT IN SQRT";
+        case CPU_INPUT_ERROR:     return "ERROR OF INPUT ELEMENT";
         default:                  return "UNKNOWN CPU ERROR";
     }
 }
@@ -364,6 +366,17 @@ static cpu_err_t op_sleep(CPU* cpu, const Operand* opd)
     return CPU_OK;
 }
 
+static cpu_err_t op_in(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+
+    Elem_t elem_in = ELEM_POISON;
+    if (fscanf(stdin, ELEM_FMT, &elem_in) != 1)  return CPU_INPUT_ERROR;
+
+    (cpu->ram)->stack_err = stack_push(cpu->stack, elem_in);
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+}
+
 // ========== Таблица переходов для обработчиков команд процессора ===========
 static const op_func handlers[CMD_COUNT] =
 {
@@ -388,6 +401,7 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_DRAW] = op_draw,
     [CMD_CLS]  = op_cls,
     [CMD_SLEEP]= op_sleep,
+    [CMD_IN]   = op_in,
 };
 //============================================================================
 
