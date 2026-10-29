@@ -1,28 +1,17 @@
-; Основной блок программы
 PUSH 2
 POP AX
 
-PUSH AX
-CALL SQUARE    ; Вызов 1: AX станет равен 2, выведет 4
-POP AX
+CALL SQUARE    ; AX = 4, выведет 4
+CALL SQUARE    ; AX = 16, выведет 16
+CALL SQUARE    ; AX = 256, выведет 256
 
-PUSH AX
-CALL SQUARE    ; Вызов 2: AX станет равен 4, выведет 16
-POP AX
+HLT
 
-PUSH AX
-CALL SQUARE    ; Вызов 3: AX станет равен 16, выведет 256
-POP AX
-
-HLT            ; Конец главной программы
-
-
-; Подпрограмма (функция) возведения в квадрат и вывода
 SQUARE:
     PUSH AX
     PUSH AX
-    MUL        ; Из стека берутся две копии AX, перемножаются, результат в стек
-    POP AX     ; Теперь в AX лежит квадрат числа
+    MUL
+    POP AX     ; в AX лежит квадрат
     PUSH AX
-    OUT        ; ; Выводим значение (4, 16 или 256)
-    RET        ; Возврат в место вызова CALL
+    OUT
+    RET

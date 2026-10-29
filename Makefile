@@ -34,7 +34,7 @@ decoder: $(DEC_OBJ)
 
 -include $(wildcard *.d)
 
-TESTS_COMMON = tests/input.txt tests/call.txt
+TESTS_COMMON = tests/call.txt tests/count.txt tests/new_quadratic.txt
 
 test: all
 	@for t in $(TESTS_COMMON); do \

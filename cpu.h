@@ -55,6 +55,7 @@ typedef enum
     CPU_RET_EMPTY       = 9,
     CPU_BAD_MEMORY      = 10,
     CPU_NO_MEMORY       = 11,
+    CPU_SQRT_NEGATIVE   = 12,
 } cpu_err_t;
 //==============================================
 

@@ -21,6 +21,7 @@ const CommandInfo isa[CMD_COUNT] =
     [CMD_SUB]   = {"SUB",  0,                                     0},
     [CMD_MUL]   = {"MUL",  0,                                     0},
     [CMD_DIV]   = {"DIV",  0,                                     0},
+    [CMD_SQRT]  = {"SQRT", 0,                                     0},
     [CMD_OUT]   = {"OUT",  0,                                     0},
     [CMD_POP]   = {"POP",  BIT_REG | BIT_IMM | BIT_MEM,           0},
     [CMD_JMP]   = {"JMP",  BIT_IMM,                               1},

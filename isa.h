@@ -36,20 +36,21 @@ typedef enum
     CMD_SUB  =  3,
     CMD_MUL  =  4,
     CMD_DIV  =  5,
-    CMD_OUT  =  6,
-    CMD_POP  =  7,
-    CMD_JMP  =  8,
-    CMD_JA   =  9,
-    CMD_JAE  =  10,
-    CMD_JB   =  11,
-    CMD_JBE  =  12,
-    CMD_JE   =  13,
-    CMD_JNE  =  14,
-    CMD_CALL =  15,
-    CMD_RET  =  16,
-    CMD_DRAW =  17,
-    CMD_CLS  =  18,
-    CMD_SLEEP = 19,
+    CMD_SQRT =  6,
+    CMD_OUT  =  7,
+    CMD_POP  =  8,
+    CMD_JMP  =  9,
+    CMD_JA   =  10,
+    CMD_JAE  =  11,
+    CMD_JB   =  12,
+    CMD_JBE  =  13,
+    CMD_JE   =  14,
+    CMD_JNE  =  15,
+    CMD_CALL =  16,
+    CMD_RET  =  17,
+    CMD_DRAW =  18,
+    CMD_CLS  =  19,
+    CMD_SLEEP = 20,
 
     CMD_COUNT           // определяет количество команд
 } Opcode;
@@ -59,7 +60,7 @@ typedef enum
 typedef struct
 {
     const char* name;
-    int         allowed;   // разврешённые флаги
+    int         allowed;   // разрешённые флаги
     int         is_jump;   // 1, если команда в качестве аргумента может принимать метки
 } CommandInfo;
 //==============================================================================

@@ -237,6 +237,21 @@ static cpu_err_t op_div(CPU* cpu, const Operand* opd)
 }
 //===================================================================================================================================
 
+// =========== op_sqrt - берет из стека последний элемент и кладет корень от него ===============
+static cpu_err_t op_sqrt(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+    Elem_t pop_elem;
+
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &pop_elem);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
+
+    if (pop_elem < 0)  return CPU_SQRT_NEGATIVE;
+
+    (cpu->ram)->stack_err = stack_push(cpu->stack, pop_elem);
+    return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+}
+
 // ============ op_out - выводит последний элемент в стеке =============
 static cpu_err_t op_out(CPU* cpu, const Operand* opd)
 {
@@ -290,9 +305,13 @@ static cpu_err_t op_jne (CPU* cpu, const Operand* opd){ return cond_jump (cpu, o
 
 static cpu_err_t op_call(CPU* cpu, const Operand* opd)
 {
-    if ((cpu->ram)->call_sp >= CALL_STACK_SIZE) return CPU_CALL_OVERFLOW;
+    if ((cpu->ram)->call_sp >= CALL_STACK_SIZE)
+    {
+        printf("%i\n", cpu->ram->call_sp);
+        return CPU_CALL_OVERFLOW;
+    }
 
-    int return_addr = cpu->pc + 2;   // адрес команды после call
+    int return_addr = cpu->pc;   // адрес команды после call
     (cpu->ram)->call_stack[(cpu->ram)->call_sp++] = return_addr;
 
     cpu_err_t err = do_jump(cpu, opd);
@@ -354,6 +373,7 @@ static const op_func handlers[CMD_COUNT] =
     [CMD_SUB]  = op_sub,
     [CMD_MUL]  = op_mul,
     [CMD_DIV]  = op_div,
+    [CMD_SQRT] = op_sqrt,
     [CMD_OUT]  = op_out,
     [CMD_POP]  = op_pop,
     [CMD_JMP]  = op_jmp,
