@@ -4,10 +4,10 @@
 ;    1  x       один корень
 ;    2  x1 x2   два корня
 ;
-; Память: [0] a  [1] b  [2] c  [3] D  [4] 2a  [5] x1  [6] x2  
-;         [9] sqrt(D)  [10] аргумент f_zero [11] результат f_zero
+; Память: [0] a  [1] b  [2] c  [3] D  [4] 2a  [5] x1  [6] x2
+;         [9] sqrt(D)  [10] аргумент f_zero  [11] результат f_zero
 
-; ---------- ввод коэффициентов a, b, c ----------
+; ---------- ввод коэффициентов: a, b, c ----------
 IN
 POP [0]             ; a
 IN
@@ -15,42 +15,15 @@ POP [1]             ; b
 IN
 POP [2]             ; c
 
-; ---------- a == 0 ? ----------
+; ---------- a ~ 0 ? ----------
 PUSH [0]
+POP [10]
+CALL f_zero
+PUSH [11]
 PUSH 0
-JNE a_nonzero
-
-PUSH [1]
-PUSH 0
-JNE linear          ; a == 0, b != 0
-
-PUSH [2]
-PUSH 0
-JNE no_roots        ; a == 0, b == 0, c != 0
-PUSH 0
-PUSH 1
-SUB
-OUT                 ; -1: бесконечно много корней
-HLT
-
-no_roots:
-PUSH 0
-OUT                 ; корней нет
-HLT
-
-linear:             ; x = -c / b
-PUSH 0
-PUSH [2]
-SUB
-PUSH [1]
-DIV
-PUSH 1
-OUT                 ; сначала количество корней
-OUT
-HLT
+JNE a_zero
 
 ; ---------- a != 0: D = b*b - 4*a*c ----------
-a_nonzero:
 PUSH [1]
 PUSH [1]
 MUL
@@ -63,33 +36,24 @@ SUB
 POP [3]
 
 PUSH [3]
+POP [10]
+CALL f_zero
+PUSH [11]
+PUSH 0
+JNE one_root        ; D ~ 0
+
+PUSH [3]
 PUSH 0
 JB no_roots         ; D < 0
 
-PUSH [3]
-PUSH 0
-JNE two_roots       ; D > 0
-
-PUSH 0              ; D == 0: x = -b / (2a)
-PUSH [1]
-SUB
-PUSH 2
-PUSH [0]
-MUL
-DIV
-PUSH 1
-OUT
-OUT
-HLT
-
-two_roots:          ; D > 0: x = (-b +- sqrt(D)) / (2a)
+; ---------- D > 0: x = (-b +- sqrt(D)) / (2a) ----------
 PUSH [3]
 SQRT
-POP [9]
+POP [9]             ; sqrt(D)
 PUSH 2
 PUSH [0]
 MUL
-POP [4]
+POP [4]             ; 2a
 
 PUSH 0
 PUSH [1]
@@ -98,7 +62,7 @@ PUSH [9]
 ADD
 PUSH [4]
 DIV
-POP [5]             ; x1
+POP [5]             ; x1 = (-b + sqrt(D)) / 2a
 
 PUSH 0
 PUSH [1]
@@ -107,7 +71,7 @@ PUSH [9]
 SUB
 PUSH [4]
 DIV
-POP [6]             ; x2
+POP [6]             ; x2 = (-b - sqrt(D)) / 2a
 
 PUSH 2
 OUT
@@ -116,3 +80,80 @@ OUT
 PUSH [6]
 OUT
 HLT
+
+one_root:           ; D ~ 0: x = -b / (2a)
+PUSH 0
+PUSH [1]
+SUB
+PUSH 2
+PUSH [0]
+MUL
+DIV
+PUSH 1
+OUT                 ; сначала количество корней
+OUT                 ; потом корень (он лежал в стеке)
+HLT
+
+; ---------- a ~ 0: линейное уравнение ----------
+a_zero:
+PUSH [1]
+POP [10]
+CALL f_zero
+PUSH [11]
+PUSH 0
+JNE b_zero          ; b ~ 0
+
+PUSH 0              ; x = -c / b
+PUSH [2]
+SUB
+PUSH [1]
+DIV
+PUSH 1
+OUT
+OUT
+HLT
+
+b_zero:             ; a ~ 0 и b ~ 0: решение зависит от c
+PUSH [2]
+POP [10]
+CALL f_zero
+PUSH [11]
+PUSH 0
+JNE inf_roots       ; c ~ 0
+
+no_roots:
+PUSH 0
+OUT                 ; корней нет
+HLT
+
+inf_roots:
+PUSH 0
+PUSH 1
+SUB
+OUT                 ; -1: корней бесконечно много
+HLT
+
+
+; =====================================================
+; f_zero: [11] = 1, если |[10]| < 1e-9, иначе 0
+; =====================================================
+f_zero:
+PUSH [10]
+PUSH 0.000000001
+JB fz_below         ; x < eps -> проверим x > -eps
+PUSH 0
+POP [11]
+RET
+fz_below:
+PUSH 0
+PUSH 0.000000001
+SUB                 ; -eps
+PUSH [10]
+JB fz_yes           ; -eps < x
+PUSH 0
+POP [11]
+RET
+fz_yes:
+PUSH 1
+POP [11]
+RET
