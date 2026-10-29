@@ -5,7 +5,7 @@ static char palette_char(Elem_t v)
 {
     if (!(v >= 0 && v < PALETTE_SIZE)) return '?';  // вне палитры, дробь больше 15 или Nan
     int color = (int)v;                             // отброс дробной части
-    return ".123456789abcdef"[color];
+    return ".123456789abcdefghijklmnopqrstuv"[color];
 }
 //====================================================================================================================================
 

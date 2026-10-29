@@ -466,7 +466,7 @@ cpu_err_t cpu_run(CPU* cpu, code_t* code, int size)
         }
 
 #ifdef CPUDEBUG
-        cpu_dump("errors.log", cpu, cpu->name, __LINE__, __func__, __FILE__);
+        //cpu_dump("errors.log", cpu, cpu->name, __LINE__, __func__, __FILE__);
 #endif
     }
     return CPU_OK;

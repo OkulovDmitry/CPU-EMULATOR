@@ -5,13 +5,14 @@ LDFLAGS = -fsanitize=address,undefined
 LIBS_RAYLIB = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 COMMON  = bytecode.o       isa.o       stack.o
-ASM_OBJ = asm_main.o                                    		$(COMMON)
-DIS_OBJ = disasm_main.o                                 		$(COMMON)
-CPU_OBJ     = cpu_main.o  cpu.o  	   display.o         		$(COMMON)    # консольный экран
-CPU_GUI_OBJ = cpu_main.o  cpu.o  	   display_raylib.o  		$(COMMON)    # окно raylib
-DEC_OBJ = decoder_main.o                               		    $(COMMON)
+ASM_OBJ = asm_main.o                                    		              $(COMMON)
+DIS_OBJ = disasm_main.o                                 		              $(COMMON)
+CPU_OBJ     = cpu_main.o  cpu.o  	   display.o         		              $(COMMON)    # консольный экран
+CPU_GUI_OBJ = cpu_main.o  cpu.o  	   display_raylib.o  		palette.o     $(COMMON)    # окно raylib
+DEC_OBJ = decoder_main.o                               		                  $(COMMON)
+PNG_OBJ = png2asm.o       palette.o                                    $(COMMON)
 
-all: asm cpu disasm decoder
+all: asm cpu disasm decoder png2asm
 all_gui: asm cpu_gui disasm decoder
 
 asm:    $(ASM_OBJ)
@@ -28,6 +29,9 @@ disasm: $(DIS_OBJ)
 
 decoder: $(DEC_OBJ)
 	$(CC) $(LDFLAGS)   $^ -o $@
+
+png2asm: $(PNG_OBJ)
+	$(CC) $(LDFLAGS) $^ -o $@ -lm
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -2,8 +2,7 @@
 #define DISPLAY_H
 
 #include "stack.h"
-
-#define PALETTE_SIZE 16                  // сколько цветов знает экран, 0...15 - это номер цвета
+#include "palette.h"
 
 int   display_init(int width, int height);
 void  display_show(const Elem_t* vram, int width, int height);

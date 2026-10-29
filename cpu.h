@@ -32,8 +32,8 @@
 
 #define CALL_STACK_SIZE 256
 
-#define VRAM_W       16                  // ширина экрана в ячейках
-#define VRAM_H       16                  // высота экрана в ячейках
+#define VRAM_W       600                  // ширина экрана в ячейках
+#define VRAM_H       600                  // высота экрана в ячейках
 #define VRAM_SIZE    (VRAM_W * VRAM_H)
 
 #define SLEEP_MAX_MS 10000               // запрет спать дольше 10 секунд подряд
