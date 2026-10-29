@@ -6,23 +6,44 @@
 ;
 ; Память: [0] a  [1] b  [2] c  [3] D  [4] 2a  [5] x1  [6] x2
 ;         [9] sqrt(D)  [10] аргумент f_zero  [11] результат f_zero
-
-; ---------- ввод коэффициентов: a, b, c ----------
+ 
+; =====================================================
+; Основной цикл: ввод коэффициентов, решение, вопрос "ещё раз?"
+; =====================================================
+main_loop:
 IN
 POP [0]             ; a
 IN
 POP [1]             ; b
 IN
 POP [2]             ; c
-
-; ---------- a ~ 0 ? ----------
+ 
+CALL f_solve        ; печатает ответ
+ 
+IN                  ; спрашиваем: 1 - ещё раз, иначе выход
+PUSH 1
+JNE finish          ; введено не 1 -> конец
+PUSH 0
+PUSH 1
+JNE main_loop       ; JMP main_loop
+ 
+finish:
+HLT
+ 
+ 
+; =====================================================
+; f_solve: решает уравнение с коэффициентами из [0], [1], [2]
+; и печатает ответ
+; =====================================================
+f_solve:
+; ---------- a = 0 ? ----------
 PUSH [0]
 POP [10]
 CALL f_zero
 PUSH [11]
 PUSH 0
 JNE a_zero
-
+ 
 ; ---------- a != 0: D = b*b - 4*a*c ----------
 PUSH [1]
 PUSH [1]
@@ -34,18 +55,18 @@ PUSH [2]
 MUL
 SUB
 POP [3]
-
+ 
 PUSH [3]
 POP [10]
 CALL f_zero
 PUSH [11]
 PUSH 0
-JNE one_root        ; D ~ 0
-
+JNE one_root        ; D = 0
+ 
 PUSH [3]
 PUSH 0
 JB no_roots         ; D < 0
-
+ 
 ; ---------- D > 0: x = (-b +- sqrt(D)) / (2a) ----------
 PUSH [3]
 SQRT
@@ -54,7 +75,7 @@ PUSH 2
 PUSH [0]
 MUL
 POP [4]             ; 2a
-
+ 
 PUSH 0
 PUSH [1]
 SUB
@@ -63,7 +84,7 @@ ADD
 PUSH [4]
 DIV
 POP [5]             ; x1 = (-b + sqrt(D)) / 2a
-
+ 
 PUSH 0
 PUSH [1]
 SUB
@@ -72,16 +93,16 @@ SUB
 PUSH [4]
 DIV
 POP [6]             ; x2 = (-b - sqrt(D)) / 2a
-
+ 
 PUSH 2
 OUT
 PUSH [5]
 OUT
 PUSH [6]
 OUT
-HLT
-
-one_root:           ; D ~ 0: x = -b / (2a)
+RET
+ 
+one_root:           ; D = 0: x = -b / (2a)
 PUSH 0
 PUSH [1]
 SUB
@@ -92,17 +113,17 @@ DIV
 PUSH 1
 OUT                 ; сначала количество корней
 OUT                 ; потом корень (он лежал в стеке)
-HLT
-
-; ---------- a ~ 0: линейное уравнение ----------
+RET
+ 
+; ---------- a = 0: линейное уравнение ----------
 a_zero:
 PUSH [1]
 POP [10]
 CALL f_zero
 PUSH [11]
 PUSH 0
-JNE b_zero          ; b ~ 0
-
+JNE b_zero          ; b = 0
+ 
 PUSH 0              ; x = -c / b
 PUSH [2]
 SUB
@@ -111,29 +132,29 @@ DIV
 PUSH 1
 OUT
 OUT
-HLT
-
-b_zero:             ; a ~ 0 и b ~ 0: решение зависит от c
+RET
+ 
+b_zero:             ; a = 0 и b = 0: решение зависит от c
 PUSH [2]
 POP [10]
 CALL f_zero
 PUSH [11]
 PUSH 0
-JNE inf_roots       ; c ~ 0
-
+JNE inf_roots       ; c = 0
+ 
 no_roots:
 PUSH 0
 OUT                 ; корней нет
-HLT
-
+RET
+ 
 inf_roots:
 PUSH 0
 PUSH 1
 SUB
 OUT                 ; -1: корней бесконечно много
-HLT
-
-
+RET
+ 
+ 
 ; =====================================================
 ; f_zero: [11] = 1, если |[10]| < 1e-9, иначе 0
 ; =====================================================
