@@ -29,8 +29,8 @@ void display_show(const Elem_t* vram, int width, int height)
 
             if (color_idx < 0 || color_idx >= PALETTE_SIZE) color_idx = 0;
 
-            Color c = { palette[color_idx].r, palette[color_idx].g,
-            palette[color_idx].b, palette[color_idx].a };
+            Color c = { my_palette[color_idx].r, my_palette[color_idx].g,
+            my_palette[color_idx].b, my_palette[color_idx].a };
 
             DrawRectangle(x * DISPLAY_CELL_SIZE, y * DISPLAY_CELL_SIZE, DISPLAY_CELL_SIZE, DISPLAY_CELL_SIZE, c);
         }

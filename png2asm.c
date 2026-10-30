@@ -1,11 +1,6 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include "palette.h"
-#include "cpu.h"
+#include "png2asm.h"
 
 #define STB_IMAGE_IMPLEMENTATION     // ровно в одном .c файле
-#define STBI_ONLY_PNG
 
 #include "stb_image.h"
 
@@ -16,10 +11,10 @@ static int nearest_color(int a, int b, int g, int r)
 
     for (int i = 0; i < PALETTE_SIZE; i++)
     {
-        int da = a - palette[i].a;
-        int db = b - palette[i].b;
-        int dg = g - palette[i].g;
-        int dr = r - palette[i].r;
+        int da = a - my_palette[i].a;
+        int db = b - my_palette[i].b;
+        int dg = g - my_palette[i].g;
+        int dr = r - my_palette[i].r;
 
         int dist = da * da + db * db + dg * dg + dr * dr;
 
@@ -87,7 +82,16 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    fprintf(out, "; %s: %d*%d -> %d*%d\n", argv[1], w, h, VRAM_W, VRAM_H);
+    asm_generation(img, w, h, out, argv[1]);
+
+    stbi_image_free(img);
+    if (fclose(out) != 0) { perror(argv[2]); return 1; }
+    return 0;
+}
+
+void asm_generation(unsigned char* img, int w, int h, FILE* out, char* name_of_frame)
+{
+    fprintf(out, "; %s: %d*%d -> %d*%d\n", name_of_frame, w, h, VRAM_W, VRAM_H);
 
     for (int y = 0; y < VRAM_H; y++)
     {
@@ -101,8 +105,4 @@ int main(int argc, char* argv[])
     }
 
     fprintf(out, "   DRAW\n HLT\n");
-
-    stbi_image_free(img);
-    if (fclose(out) != 0) { perror(argv[2]); return 1; }
-    return 0;
 }
