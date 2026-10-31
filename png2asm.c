@@ -4,15 +4,20 @@
 
 #include "stb_image.h"
 
-#define HYST_THRESHOLD 2000
+#define HYST_THRESHOLD 200
 
 static int dist_to(int i, int b, int g, int r)
 {
-    int db = my_palette[i].b - b;
-    int dg = my_palette[i].g - g;
-    int dr = my_palette[i].r - r;
+    int pb = my_palette[i].b;
+    int pg = my_palette[i].g;
+    int pr = my_palette[i].r;
 
-    return 11 * db * db + 59 * dg * dg + 30 * dr * dr;
+    int rm = (pr + r) / 2;
+    int dr = pr - r;
+    int dg = pg - g;
+    int db = pb - b;
+
+    return (512 + rm) * dr * dr / 256 + 4 * dg * dg + (767 - rm) * db * db / 256;
 }
 
 static int nearest_color(int b, int g, int r, int prev_idx)
