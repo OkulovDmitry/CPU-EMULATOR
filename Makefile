@@ -10,10 +10,10 @@ DIS_OBJ = disasm_main.o                                 		              $(COMMON
 CPU_OBJ     = cpu_main.o  cpu.o  	   display.o         		              $(COMMON)    # консольный экран
 CPU_GUI_OBJ = cpu_main.o  cpu.o  	   display_raylib.o  		palette.o     $(COMMON)    # окно raylib
 DEC_OBJ = decoder_main.o                               		                  $(COMMON)
-PNG_OBJ = png2asm.o       palette.o                                           $(COMMON)
-ANI_OBG = png2asm.o       palette.o    cpu.o                                  $(COMMON)
+PNG_OBJ = png2asm.o           palette.o                                       $(COMMON)
+ANI_OBJ = frames_animations.o png2asm.o palette.o                             $(COMMON)
 
-all: asm cpu disasm decoder png2asm frames_animation
+all: asm cpu disasm decoder ani
 all_gui: asm cpu_gui disasm decoder
 
 asm:    $(ASM_OBJ)
@@ -31,8 +31,8 @@ disasm: $(DIS_OBJ)
 decoder: $(DEC_OBJ)
 	$(CC) $(LDFLAGS)   $^ -o $@
 
-png2asm: $(PNG_OBJ)
-	$(CC) $(LDFLAGS) $^ -o $@ -lm
+#png2asm: $(PNG_OBJ)
+#	$(CC) $(LDFLAGS) $^ -o $@ -lm
 
 ani: $(ANI_OBJ)
 	$(CC) $(LDFLAGS) $^ -o $@ -lm
@@ -74,6 +74,6 @@ raylib_draw_test: all_gui
 	@echo "GUI DRAW OK"
 
 clean:
-	rm -f asm cpu disasm decoder cpu_gui *.o *.d *.bin output.txt
+	rm -f asm cpu disasm decoder cpu_gui ani png2asm *.o *.d *.bin output.txt
 
 .PHONY: all all_gui test console_draw_test raylib_draw_test clean

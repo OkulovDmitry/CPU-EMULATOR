@@ -88,6 +88,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    unsigned char* prev = calloc(VRAM_W * VRAM_H, 1);
+    if (prev == NULL) { fclose(out); return 1; }
+
     char frame_name[PATH_MAX_LEN];
 
     for (long i = 0; i < number_of_frames; i++)
@@ -111,12 +114,15 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        asm_generation(img, w, h, out, frame_name);
+        asm_generation(img, w, h, out, frame_name, prev);
 
-        fprintf(out, "   PUSH 100\n   SLEEP\n");
+        fprintf(out, "   PUSH 10\n   SLEEP\n");
 
         stbi_image_free(img);
     }
+
+    fprintf(out, "   HLT\n");
+    free(prev);
 
     if (fclose(out) != 0) { perror(argv[2]); return 1; }
     return 0;

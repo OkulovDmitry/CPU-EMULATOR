@@ -2,7 +2,7 @@
 #include <raylib.h>
 #include "palette.h"
 
-#define DISPLAY_CELL_SIZE 1 // размер одного "пикселя" окна в реальных пикселях
+#define DISPLAY_CELL_SIZE 2 // размер одного "пикселя" окна в реальных пикселях
 
 int display_init(int width, int height)
 {

@@ -378,7 +378,7 @@ static cpu_err_t op_in(CPU* cpu, const Operand* opd)
 }
 
 // ========== Таблица переходов для обработчиков команд процессора ===========
-static const op_func handlers[CMD_COUNT] =
+static const op_func  handlers[CMD_COUNT] =
 {
     [CMD_HLT]  = op_hlt,
     [CMD_PUSH] = op_push,

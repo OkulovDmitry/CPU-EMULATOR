@@ -4,31 +4,35 @@
 
 #include "stb_image.h"
 
-static int nearest_color(int a, int b, int g, int r)
+#define HYST_THRESHOLD 2000
+
+static int dist_to(int i, int b, int g, int r)
+{
+    int db = my_palette[i].b - b;
+    int dg = my_palette[i].g - g;
+    int dr = my_palette[i].r - r;
+
+    return 11 * db * db + 59 * dg * dg + 30 * dr * dr;
+}
+
+static int nearest_color(int b, int g, int r, int prev_idx)
 {
     int best = 0;
     int best_dist = -1;
 
     for (int i = 0; i < PALETTE_SIZE; i++)
     {
-        int da = a - my_palette[i].a;
-        int db = b - my_palette[i].b;
-        int dg = g - my_palette[i].g;
-        int dr = r - my_palette[i].r;
-
-        int dist = da * da + db * db + dg * dg + dr * dr;
-
-        if (best_dist < 0 || dist < best_dist)
-        {
-            best = i;
-            best_dist = dist;
-        }
+        int d = dist_to(i, b, g, r);
+        if (best_dist < 0 || d < best_dist) { best = i; best_dist = d; }
     }
+
+    if (dist_to(prev_idx, b, g, r) <= best_dist + HYST_THRESHOLD)
+        return prev_idx;     // старый цвет в целом норм
 
     return best;
 }
 
-static int pixel_color(const unsigned char* img, int w, int h, int x, int y)
+static int pixel_color(const unsigned char* img, int w, int h, int x, int y,int prev_idx)
 {
     //вычисляем блок пикселей, который проецируется в одну клетку
     int x0 = x * w / VRAM_W, x1 = (x + 1) * w / VRAM_W;
@@ -55,10 +59,10 @@ static int pixel_color(const unsigned char* img, int w, int h, int x, int y)
     }
 
     if (n == 0) return 0;
-    return nearest_color(255, (int)(b / n), (int)(g / n), (int)(r / n));
+    return nearest_color((int)(b / n), (int)(g / n), (int)(r / n), prev_idx);
 }
 
-int main(int argc, char* argv[])
+/*int main(int argc, char* argv[])
 {
     if (argc != 3)
     {
@@ -81,28 +85,35 @@ int main(int argc, char* argv[])
         stbi_image_free(img);
         return 1;
     }
+    
+    unsigned char* prev = calloc(VRAM_W * VRAM_H, 1);
+    if (prev == NULL) { fclose(out); stbi_image_free(img); return 1; }
 
-    asm_generation(img, w, h, out, argv[1]);
+    asm_generation(img, w, h, out, argv[1], prev);
+    fprintf(out, "   HLT\n");
+    free(prev);
 
     stbi_image_free(img);
     if (fclose(out) != 0) { perror(argv[2]); return 1; }
     return 0;
-}
+}*/
 
-void asm_generation(unsigned char* img, int w, int h, FILE* out, char* name_of_frame)
+void asm_generation(unsigned char* img, int w, int h, FILE* out, const char* name, unsigned char* prev)
 {
-    fprintf(out, "; %s: %d*%d -> %d*%d\n", name_of_frame, w, h, VRAM_W, VRAM_H);
+    //fprintf(stderr, "NEW asm_generation: %s\n", name);
+    fprintf(out, "; %s: %d*%d -> %d*%d\n", name, w, h, VRAM_W, VRAM_H);
 
     for (int y = 0; y < VRAM_H; y++)
     {
         for (int x = 0; x < VRAM_W; x++)
         {
-            int idx = pixel_color(img, w, h, x, y);
-            if (idx == 0) continue;                  // фон уже нулевой
+            int idx = pixel_color(img, w, h, x, y, prev[y * VRAM_W + x]);
+            if (idx == prev[y * VRAM_W + x])  continue;
 
-            fprintf(out, "   PUSH %d\n   POP [%d]\n", idx, y * VRAM_W+ x);
+            prev[y * VRAM_W + x] = (unsigned char)idx;
+            fprintf(out, "   PUSH %d\n   POP [%d]\n", idx, y * VRAM_W + x);
         }
     }
 
-    fprintf(out, "   DRAW\n HLT\n");
+    fprintf(out, "   DRAW\n");
 }
