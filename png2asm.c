@@ -1,7 +1,6 @@
 #include "png2asm.h"
 
 #define STB_IMAGE_IMPLEMENTATION     // ровно в одном .c файле
-
 #include "stb_image.h"
 
 #define HYST_THRESHOLD 200
@@ -20,16 +19,41 @@ static int dist_to(int i, int b, int g, int r)
     return (512 + rm) * dr * dr / 256 + 4 * dg * dg + (767 - rm) * db * db / 256;
 }
 
+static unsigned char lut[32][32][32];
+static int lut_ready = 0;
+
+static void lut_init(void)
+{
+    for (int ri = 0; ri < 32; ri++)
+    {
+        for (int gi = 0; gi < 32; gi++)
+        {
+            for (int bi = 0; bi < 32; bi++)
+            {
+                int r = ri * 8 + 4;   // середина интервала цветов
+                int g = gi * 8 + 4;
+                int b = bi * 8 + 4;
+
+                int best = 0, best_dist = -1;
+                for (int i = 0; i < PALETTE_SIZE; i++)
+                {
+                    int d = dist_to(i, b, g, r);
+                    if (best_dist < 0 || d < best_dist) {best = i; best_dist = d; }
+                }
+                lut[ri][gi][bi] = (unsigned char)best;
+            }
+        }
+    }
+
+    lut_ready = 1;
+}
+
 static int nearest_color(int b, int g, int r, int prev_idx)
 {
-    int best = 0;
-    int best_dist = -1;
+    if (!lut_ready) lut_init();
 
-    for (int i = 0; i < PALETTE_SIZE; i++)
-    {
-        int d = dist_to(i, b, g, r);
-        if (best_dist < 0 || d < best_dist) { best = i; best_dist = d; }
-    }
+    int best      =  lut[r >> 3][g >> 3][b >> 3];
+    int best_dist = dist_to(best, b, g, r);
 
     if (dist_to(prev_idx, b, g, r) <= best_dist + HYST_THRESHOLD)
         return prev_idx;     // старый цвет в целом норм

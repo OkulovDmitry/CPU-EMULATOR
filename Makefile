@@ -37,6 +37,9 @@ decoder: $(DEC_OBJ)
 ani: $(ANI_OBJ)
 	$(CC) $(LDFLAGS) $^ -o $@ -lm
 
+makepalette: makepalette.o
+	$(CC) $(LDFLAGS) $^ -o $@ -lm
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
