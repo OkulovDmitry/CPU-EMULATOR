@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define PALETTE_SIZE 32          // сколько цветов знает экран, 0...31
+#define PALETTE_SIZE 256          // сколько цветов знает экран, 0...31
 
 typedef struct
 {

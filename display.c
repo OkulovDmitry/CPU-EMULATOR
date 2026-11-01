@@ -1,13 +1,5 @@
 #include "display.h"
-
-//=== palette_char - символ значения ячейки в текстовом режиме: 0 это '.', дальше цифра цвета в hex, неправильное значение это '?' ===
-static char palette_char(Elem_t v)
-{
-    if (!(v >= 0 && v < PALETTE_SIZE)) return '?';  // вне палитры, дробь больше 15 или Nan
-    int color = (int)v;                             // отброс дробной части
-    return ".123456789abcdefghijklmnopqrstuv"[color];
-}
-//====================================================================================================================================
+#include <stdio.h>
 
 int display_init(int width, int height)
 {
@@ -22,10 +14,12 @@ void display_show(const Elem_t* vram, int width, int height)
     {
         for (int x = 0; x < width; x++)
         {
-            putchar(palette_char(vram[y * width + x]));
-            putchar(' ');                                     //для придания квадратной формы клеткам(почти)
+            Elem_t v = vram[y * width + x];
+            int c = (v >= 0 && v < PALETTE_SIZE) ? (int)v : 0;  // мусор и nan дают цвет 0
+
+            printf("\x1b[48;2;%d;%d;%dm ", my_palette[c].r, my_palette[c].g, my_palette[c].b);
         }
-        putchar('\n');
+        printf("\x1b[0m\n");                                    // в конце строки сбрасываем цвет
     }
 }
 

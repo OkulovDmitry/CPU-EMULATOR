@@ -4,14 +4,14 @@ LDFLAGS = -O2
 
 LIBS_RAYLIB = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
-COMMON  = bytecode.o       isa.o       stack.o
-ASM_OBJ = asm_main.o                                    		              $(COMMON)
-DIS_OBJ = disasm_main.o                                 		              $(COMMON)
-CPU_OBJ     = cpu_main.o  cpu.o  	   display.o         		              $(COMMON)    # консольный экран
-CPU_GUI_OBJ = cpu_main.o  cpu.o  	   display_raylib.o  		palette.o     $(COMMON)    # окно raylib
-DEC_OBJ = decoder_main.o                               		                  $(COMMON)
-PNG_OBJ = png2asm.o           palette.o                                       $(COMMON)
-ANI_OBJ = frames_animations.o png2asm.o palette.o                             $(COMMON)
+COMMON  	= bytecode.o       isa.o                 stack.o
+ASM_OBJ 	= asm_main.o                                    		                      $(COMMON)
+DIS_OBJ 	= disasm_main.o                                 		                      $(COMMON)
+CPU_OBJ     = cpu_main.o       cpu.o                display.o               palette.o     $(COMMON)    # консольный экран
+CPU_GUI_OBJ = cpu_main.o       cpu.o  	            display_raylib.o  		palette.o     $(COMMON)    # окно raylib
+DEC_OBJ 	= decoder_main.o                               		                          $(COMMON)
+PNG_OBJ 	= png2asm.o                             palette.o                             $(COMMON)
+ANI_OBJ	    = frames_animations.o                   png2asm.o               palette.o     $(COMMON)
 
 all: asm cpu disasm decoder ani
 all_gui: asm cpu_gui disasm decoder

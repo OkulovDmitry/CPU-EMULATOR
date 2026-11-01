@@ -6,6 +6,8 @@
 #include <string.h>
 
 static int sort_ch;
+static unsigned int  cnt[32][32][32];                    // сколько раз встретился цвет-ячейка
+static unsigned long sum_r[32][32][32], sum_g[32][32][32], sum_b[32][32][32];
 
 typedef struct
 {
@@ -18,6 +20,8 @@ typedef struct
 {
     int mi;
     int ma;
+    int range;     // разброс по самому широкому каналу
+    int ch;        // какой это канал
 } Box;
 
 static int chch(const Rgb* c, int ch)  // достать нужный канал из цвета
@@ -75,6 +79,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    Rgb* px = NULL;                                          // выделим позже, когда узнаем размер
+    size_t total = 0;
+
     long first = strtol(argv[2], NULL, 10);   // номер первого кадра
     long count = strtol(argv[3], NULL, 10);   // сколько кадров всего
     long step  = strtol(argv[4], NULL, 10);   // берем каждый step-й кадр
@@ -83,14 +90,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "bad count.step\n");
         return 1;
     }
-
-    // сколько кадров считается и сколько пикселей будет
-    long used  = (count + step - 1) / step;
-    size_t cap = (size_t)used * VRAM_W * VRAM_H;
-
-    Rgb* px = malloc(cap * sizeof(Rgb));  // все пиксели будут в этом массиве
-    if (px == NULL)  return 1;
-    size_t total = 0;                                  // сколлько реально записано
 
     char name[1024];           // путь к кадру
 
@@ -138,10 +137,13 @@ int main(int argc, char* argv[])
 
                 if (n == 0) continue;;
 
-                px[total].r = (unsigned char)(r / n);
-                px[total].g = (unsigned char)(g / n);
-                px[total].b = (unsigned char)(b / n);
-                total++;
+                int rr = r / n, gg = g / n, bb = b / n;
+                int ri = rr >> 3, gi = gg >> 3, bi = bb >> 3;
+
+                cnt[ri][gi][bi]++;
+                sum_r[ri][gi][bi] += (unsigned long)rr;
+                sum_g[ri][gi][bi] += (unsigned long)gg;
+                sum_b[ri][gi][bi] += (unsigned long)bb;
             }
         }
 
@@ -149,35 +151,57 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s done\n", name);
     }
 
-    fprintf(stderr, "pixels collected: %zu\n", total);
+    size_t need = 0;
+    for (int a = 0; a < 32; a++)
+        for (int b = 0; b < 32; b++)
+            for (int c = 0; c < 32; c++)
+                if (cnt[a][b][c]) need += (size_t)sqrt((double)cnt[a][b][c]) + 1;
+
+    px = malloc(need * sizeof(Rgb));
+    if (px == NULL) { fprintf(stderr, "malloc failed\n"); return 1; }
+
+    for (int a = 0; a < 32; a++)
+        for (int b = 0; b < 32; b++)
+            for (int c = 0; c < 32; c++)
+            {
+                unsigned int k = cnt[a][b][c];
+                if (!k) continue;
+
+                Rgb col = { (unsigned char)(sum_r[a][b][c] / k),
+                            (unsigned char)(sum_g[a][b][c] / k),
+                            (unsigned char)(sum_b[a][b][c] / k) };
+
+                size_t copies = (size_t)sqrt((double)k) + 1;     // вес = корень из частоты
+                for (size_t t = 0; t < copies; t++) px[total++] = col;
+            }
+
+    fprintf(stderr, "pixels for cut: %zu\n", total);
 
     Box cells[PALETTE_SIZE];
     int nc = 1;                // количество интервалов сейчас
     cells[0].mi = 0;
     cells[0].ma = (int)total;
 
+    cells[0].range = cell_range(px, cells[0], &cells[0].ch);
+
     while (nc < PALETTE_SIZE)
     {
-        int pick = -1, pick_range = 0, pick_ch = 0;
+        int pick = -1, pick_range = 0;
 
         for (int i = 0; i < nc; i++)
         {
             if (cells[i].ma - cells[i].mi < 2) continue;      // в одной точке резать нечего
-
-            int ch = 0;
-            int rg = cell_range(px, cells[i], &ch);
-            if (rg > pick_range)
+            if (cells[i].range > pick_range)
             {
                 pick = i;
-                pick_range = rg;
-                pick_ch = ch;
+                pick_range = cells[i].range;
             }
         }
 
         if (pick < 0) break;                      // все коробки однотонные, резать больше нечего
 
         // сортируем пиксели выбранной коробки по её самому широкому каналу
-        sort_ch = pick_ch;
+        sort_ch = cells[pick].ch;
         qsort(px + cells[pick].mi, (size_t)(cells[pick].ma - cells[pick].mi), sizeof(Rgb), cmp_pixels);
 
         // режем пополам: правая половина становится новой коробкой
@@ -185,8 +209,14 @@ int main(int argc, char* argv[])
         cells[nc].mi   = mid;
         cells[nc].ma   = cells[pick].ma;
         cells[pick].ma = mid;
+
+        cells[pick].range = cell_range(px, cells[pick], &cells[pick].ch);   // перерасчет левой половины
+        cells[nc].range   = cell_range(px, cells[nc],   &cells[nc].ch);     // перерасчет правой полвины
         nc++;
     }
+
+    
+    fprintf(stderr, "cells: %d of %d\n", nc, PALETTE_SIZE);
 
     // цвет каждого интервала = среднее всех его пикселей
     Rgb pal[PALETTE_SIZE] = {{0, 0, 0}};
