@@ -383,9 +383,9 @@ static cpu_err_t op_fill(CPU* cpu, const Operand* opd)
 {
     (void)opd;
 
-    int color = 0;
-    int len   = 0;
-    int addr  = 0;
+    Elem_t color = 0;
+    Elem_t len   = 0;
+    Elem_t addr  = 0;
 
     (cpu->ram)->stack_err = stack_pop(cpu->stack, &color);
     if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
@@ -398,9 +398,9 @@ static cpu_err_t op_fill(CPU* cpu, const Operand* opd)
 
     if (addr < 0 || len < 0 || addr + len > VRAM_SIZE)  return CPU_FILL_OUT_MEMORY;
 
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < (int)(len); i++)
     {
-        (cpu->ram)->vram[addr + i] = color;
+        (cpu->ram)->vram[(int)addr + i] = (int)color;
     }
 
     return CPU_OK;

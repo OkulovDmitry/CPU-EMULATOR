@@ -132,17 +132,47 @@ void asm_generation(unsigned char* img, int w, int h, FILE* out, const char* nam
     //fprintf(stderr, "NEW asm_generation: %s\n", name);
     fprintf(out, "; %s: %d*%d -> %d*%d\n", name, w, h, VRAM_W, VRAM_H);
 
+    unsigned char* cur = malloc((size_t)VRAM_SIZE);  // текущий кадр
+
     for (int y = 0; y < VRAM_H; y++)
     {
         for (int x = 0; x < VRAM_W; x++)
         {
-            int idx = pixel_color(img, w, h, x, y, prev[y * VRAM_W + x]);
-            if (idx == prev[y * VRAM_W + x])  continue;
+            int k = y * VRAM_W + x;
+            cur[k] = (unsigned char)pixel_color(img, w, h, x, y, prev[k]);
+        }
+    }
 
-            prev[y * VRAM_W + x] = (unsigned char)idx;
-            fprintf(out, "   PUSH %d\n   POP [%d]\n", idx, y * VRAM_W + x);
+    int i = 0;
+    while (i < VRAM_SIZE)
+    {
+        if (cur[i] == prev[i]) { i++; continue; }
+
+        int c = cur[i];
+        int j = i + 1;
+        while(j < VRAM_SIZE && cur[j] == c) j++;
+
+        int len = j - i;
+        if (len >= 3)
+        {
+            fprintf(out, "   PUSH %d\n   PUSH %d\n   PUSH %d\n   FILL\n", i, len, c);
+        }
+        else
+        {
+            for (int k = i; k < j; k++)
+            {
+                if (prev[k] != c)
+                    fprintf(out, "   PUSH %d\n   POP [%d]\n", c, k);
+            }
+        }
+
+        for (int k = i; k < j; k++)
+        {
+            prev[k] = (unsigned char)c;
+            i = j;
         }
     }
 
     fprintf(out, "   DRAW\n");
+    free(cur);
 }
