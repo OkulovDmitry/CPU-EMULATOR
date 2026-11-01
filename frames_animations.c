@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 
         asm_generation(img, w, h, out, frame_name, prev);
 
-        fprintf(out, "   PUSH 10\n   SLEEP\n");
+        fprintf(out, "   PUSH 30\n   SLEEP\n");
 
         stbi_image_free(img);
     }
