@@ -56,6 +56,16 @@ static int cell_range(const Rgb* px, Box bx, int* ch)
     return mx[best] - mn[best];
 }
 
+static int lum(const Rgb* c)    // для контроля яркости
+{
+    return 299 * c->r + 587 * c->g + 114 * c->b;
+}
+
+static int cmp_lum(const void* a, const void* b)
+{
+    return lum((const Rgb*)a) - lum((const Rgb*)b);
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 6)
@@ -155,7 +165,7 @@ int main(int argc, char* argv[])
             if (cells[i].ma - cells[i].mi < 2) continue;      // в одной точке резать нечего
 
             int ch = 0;
-            int rg = box_range(px, cells[i], &ch);
+            int rg = cell_range(px, cells[i], &ch);
             if (rg > pick_range)
             {
                 pick = i;
@@ -175,8 +185,51 @@ int main(int argc, char* argv[])
         cells[nc].mi   = mid;
         cells[nc].ma   = cells[pick].ma;
         cells[pick].ma = mid;
-        
+        nc++;
     }
+
+    // цвет каждого интервала = среднее всех его пикселей
+    Rgb pal[PALETTE_SIZE] = {{0, 0, 0}};
+
+    for (int i = 0; i < nc; i++)
+    {
+        long r = 0, g = 0, b = 0;
+        int n = cells[i].ma - cells[i].mi;
+
+        for (int j = cells[i].mi; j < cells[i].ma; j++)
+        {
+            r += px[j].r;
+            b += px[j].b;
+            g += px[j].g;
+        }
+
+        if (n > 0)
+        {
+            pal[i].r = (unsigned char)(r / n);
+            pal[i].b = (unsigned char)(b / n);
+            pal[i].g = (unsigned char)(g / n);
+
+        }
+    }
+
+    qsort (pal, PALETTE_SIZE, sizeof(Rgb), cmp_lum);
+
+    FILE* out = fopen(argv[5], "w");
+    if (out == NULL)
+    {
+        perror(argv[5]);
+        free(px);
+        return 1;
+    }
+
+    fprintf(out, "#include \"palette.h\"\n\nconst PaletteColor my_palette[PALETTE_SIZE] =\n{\n");    for (int i = 0; i < PALETTE_SIZE; i++)
+    {
+        fprintf(out, "    {%d, %d, %d, 255},   // %d\n", pal[i].r, pal[i].g, pal[i].b, i);
+    }
+
+    fprintf(out, "};\n");
+
+    fclose(out);
 
     free(px);
     return 0;

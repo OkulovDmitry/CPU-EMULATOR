@@ -10,6 +10,6 @@ typedef struct
     uint8_t r, g, b, a;
 } PaletteColor;                  // не Color: это имя занято в raylib
 
-extern const PaletteColor palette[PALETTE_SIZE];
+extern const PaletteColor my_palette[PALETTE_SIZE];
 
 #endif //PALETTE_H

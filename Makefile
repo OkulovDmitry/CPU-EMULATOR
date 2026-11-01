@@ -1,6 +1,6 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Wshadow -g -fsanitize=address,undefined -MMD -MP
-LDFLAGS = -fsanitize=address,undefined
+CFLAGS  = -Wall -Wextra -Wshadow -g -O2 -MMD -MP
+LDFLAGS = -O2
 
 LIBS_RAYLIB = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 

@@ -31,6 +31,7 @@ const char* cpu_strerror(cpu_err_t err)
         case CPU_NO_MEMORY:       return "OUT OF MEMORY IN CPU";
         case CPU_SQRT_NEGATIVE:   return "NEGATIVE ELEMENT IN SQRT";
         case CPU_INPUT_ERROR:     return "ERROR OF INPUT ELEMENT";
+        case CPU_FILL_OUT_MEMORY: return "ATTEMP FILL OUT OF MEMORY";
         default:                  return "UNKNOWN CPU ERROR";
     }
 }
@@ -355,6 +356,7 @@ static cpu_err_t op_sleep(CPU* cpu, const Operand* opd)
     Elem_t ms = 0;
 
     (cpu->ram)->stack_err = stack_pop(cpu->stack, &ms);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
 
     if (!(ms > 0)) return CPU_OK;                           //пока что в таких случаях тупо не спим
     if (ms > SLEEP_MAX_MS) ms = SLEEP_MAX_MS;
@@ -375,6 +377,33 @@ static cpu_err_t op_in(CPU* cpu, const Operand* opd)
 
     (cpu->ram)->stack_err = stack_push(cpu->stack, elem_in);
     return (cpu->ram)->stack_err == STACK_OK ? CPU_OK : CPU_STACK_FAIL;
+}
+
+static cpu_err_t op_fill(CPU* cpu, const Operand* opd)
+{
+    (void)opd;
+
+    int color = 0;
+    int len   = 0;
+    int addr  = 0;
+
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &color);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
+
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &len);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
+
+    (cpu->ram)->stack_err = stack_pop(cpu->stack, &addr);
+    if ((cpu->ram)->stack_err != STACK_OK) return CPU_STACK_FAIL;
+
+    if (addr < 0 || len < 0 || addr + len > VRAM_SIZE)  return CPU_FILL_OUT_MEMORY;
+
+    for (int i = 0; i < len; i++)
+    {
+        (cpu->ram)->vram[addr + i] = color;
+    }
+
+    return CPU_OK;
 }
 
 // ========== Таблица переходов для обработчиков команд процессора ===========
@@ -402,6 +431,7 @@ static const op_func  handlers[CMD_COUNT] =
     [CMD_CLS]  = op_cls,
     [CMD_SLEEP]= op_sleep,
     [CMD_IN]   = op_in,
+    [CMD_FILL] = op_fill,
 };
 //============================================================================
 

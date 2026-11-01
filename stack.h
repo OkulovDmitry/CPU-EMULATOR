@@ -11,7 +11,7 @@
 //===================================== Режимы компиляции =====================================
 #define STKDEBUG
 #define STK_CANARY
-#define STK_HASH
+//#define STK_HASH
 #define STK_ABORT_ON_CORRUPT
 
 #ifdef STKDEBUG
