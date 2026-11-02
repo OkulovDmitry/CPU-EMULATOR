@@ -86,20 +86,31 @@ void display_show(const Elem_t* vram, int width, int height)
 
     for (int cy = 0; cy < cell_rows; cy++)
     {
-        int last = -1;         // какой цыет сейчас включен
+        int last_fg = -1, last_bg = -1;         // какой цыет сейчас включен
 
         for (int cx = 0; cx < out_w; cx++)
         {
-            int r, g, b;
-            avg_color(vram, width, height, cx, cy, out_w, cell_rows, &r, &g, &b);
+            int tr, tg, tb;    //  верхний пиксель клетки
+            int br, bg, bb;    //  нижний пиксель  клетки
 
-            int key = (r << 16) | (g << 8) | b;
-            if (key != last)
+            avg_color(vram, width, height, cx, cy * 2,     out_w, out_h, &tr, &tg, &tb);
+            avg_color(vram, width, height, cx, cy * 2 + 1, out_w, out_h, &br, &bg, &bb);
+
+            int fg = (tr << 16) | (tg << 8) | tb;
+            int bk = (br << 16) | (bg << 8) | bb;
+
+            if (fg != last_fg)  // цвет текста = верхняя половина
             {
-                printf("\x1b[48;2;%d;%d;%dm", r, g, b);
-                last = key;
+                printf("\x1b[38;2;%d;%d;%dm", tr, tg, tb);
+                last_fg = fg;
             }
-            putchar(' ');
+            if (bk != last_bg)  // цвет фона = нижняя половина
+            {
+                printf("\x1b[48;2;%d;%d;%dm", br, bg, bb);
+                last_bg = bk;
+            }
+
+            fputs("\xE2\x96\x80", stdout);
         }
 
         printf("\x1b[0m\n");         // сброс цвета в конце строки
